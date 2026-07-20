@@ -9,5 +9,3 @@ Thumbs.db
 # Sensitive (local only)
 key.txt
 advice.txt
-# Claude Code internal
-.claude/
