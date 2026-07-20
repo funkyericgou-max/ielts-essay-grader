@@ -1,0 +1,1981 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IELTS Essay Grader — 雅思作文批阅系统</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%232d5a41'/><text y='.72em' x='50' text-anchor='middle' font-size='40' font-weight='700' fill='white' font-family='sans-serif'>IELTS</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#f6f5f0;--surface:#ffffff;--surface-2:#f0efe9;--border:#e2e0d8;
+    --text-primary:#1a1a16;--text-secondary:#6b6b5e;--text-tertiary:#9a9a8c;
+    --accent:#2d5a41;--accent-soft:rgba(45,90,65,.08);--accent-mid:rgba(45,90,65,.2);
+    --radius:8px;--radius-lg:12px;
+    --shadow-sm:0 1px 2px rgba(0,0,0,.04);
+    --shadow-md:0 4px 12px rgba(0,0,0,.06);
+    --shadow-lg:0 8px 24px rgba(0,0,0,.08);
+    --font-display:'Playfair Display',Georgia,serif;
+    --font-body:'DM Sans',system-ui,sans-serif;
+    --font-mono:'JetBrains Mono',Consolas,monospace;
+    --band9:#16a085;--band8:#15803d;--band7:#65a30d;--band6:#ca8a04;--band5:#ea580c;--band4:#dc2626;
+    --correct:#16a085;--weak:#c0392b;--suggest:#2980b9;
+  }
+  html{font-family:var(--font-body);background:var(--bg);color:var(--text-primary);line-height:1.6;-webkit-font-smoothing:antialiased}
+  body{min-height:100vh;display:flex;flex-direction:column}
+
+  /* ─── Top Nav ─── */
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:12px 32px;background:var(--surface);border-bottom:1px solid var(--border);
+    position:sticky;top:0;z-index:100;
+  }
+  .topbar-brand{display:flex;align-items:center;gap:12px}
+  .topbar-logo{width:auto;padding:0 10px;height:32px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;letter-spacing:.04em}
+  .topbar-title{font-family:var(--font-display);font-size:18px;font-weight:600;letter-spacing:-.01em}
+  .topbar-nav{display:flex;align-items:center;gap:24px}
+  .topbar-nav a{font-size:13px;color:var(--text-secondary);text-decoration:none;font-weight:500;transition:color .15s;cursor:pointer}
+  .topbar-nav a:hover{color:var(--text-primary)}
+  .topbar-user{display:flex;align-items:center;gap:10px}
+  .topbar-avatar{width:32px;height:32px;border-radius:50%;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--accent);font-weight:600;cursor:pointer}
+
+  /* ─── Layout ─── */
+  .app{display:grid;grid-template-columns:280px 1fr;flex:1;gap:0}
+  @media(max-width:1024px){.app{grid-template-columns:1fr}}
+  @media(max-width:1024px){
+    .app{grid-template-columns:1fr}
+    .sidebar{position:fixed;top:57px;left:0;width:280px;height:calc(100vh - 57px);z-index:200;transform:translateX(-100%);transition:transform .3s ease;max-height:calc(100vh - 57px)}
+    .sidebar.open{transform:translateX(0)}
+    .sidebar-backdrop{display:none;position:fixed;top:57px;left:0;width:100%;height:calc(100vh - 57px);background:rgba(0,0,0,.35);z-index:199}
+    .sidebar-backdrop.open{display:block}
+    .sidebar-toggle{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);cursor:pointer;color:var(--text-secondary);font-size:18px;transition:all .15s}
+    .sidebar-toggle:hover{border-color:var(--accent-mid);color:var(--text-primary)}
+    .topbar-nav{gap:12px}
+  }
+  @media(min-width:1025px){
+    .sidebar-toggle{display:none}
+    .sidebar-backdrop{display:none}
+  }
+
+  /* ─── Sidebar ─── */
+  .sidebar{
+    padding:24px 20px;background:var(--surface);border-right:1px solid var(--border);
+    overflow-y:auto;max-height:calc(100vh - 57px);position:sticky;top:57px;
+  }
+  .sidebar-section{margin-bottom:28px}
+  .sidebar-heading{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-tertiary);margin-bottom:12px;padding:0 4px}
+
+  .band-overview{display:flex;flex-direction:column;gap:10px}
+  .band-row{display:flex;align-items:center;gap:10px}
+  .band-label{font-size:12px;color:var(--text-secondary);width:80px;flex-shrink:0;font-weight:500}
+  .band-bar-track{flex:1;height:22px;background:var(--surface-2);border-radius:4px;overflow:hidden;position:relative}
+  .band-bar-fill{height:100%;border-radius:4px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;transition:width .5s ease}
+  .band-bar-fill span{font-size:11px;font-weight:700;color:rgba(255,255,255,.95);white-space:nowrap}
+  .band-bar-fill.band-9{background:var(--band9)}
+  .band-bar-fill.band-8{background:var(--band8)}
+  .band-bar-fill.band-7{background:var(--band7)}
+  .band-bar-fill.band-6{background:var(--band6)}
+  .band-bar-fill.band-5{background:var(--band5)}
+  .band-bar-fill.band-4{background:var(--band4)}
+
+  .overall-band{
+    text-align:center;padding:20px;background:var(--surface-2);border:1px solid var(--border);
+    border-radius:var(--radius-lg);margin-top:12px;
+  }
+  .overall-band-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-tertiary);margin-bottom:8px}
+  .overall-band-value{font-size:48px;font-weight:700;font-family:var(--font-mono);line-height:1}
+  .overall-band-label2{font-size:12px;color:var(--text-secondary);margin-top:4px}
+
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .stat-card{
+    background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);
+    padding:12px 14px;
+  }
+  .stat-value{font-size:20px;font-weight:700;font-family:var(--font-mono);color:var(--text-primary);line-height:1.2}
+  .stat-label{font-size:11px;color:var(--text-tertiary);margin-top:2px;font-weight:500}
+
+  .improve-tags{display:flex;flex-wrap:wrap;gap:6px}
+  .improve-tag{
+    font-size:11px;font-weight:500;padding:4px 10px;border-radius:16px;
+    border:1px solid;display:inline-flex;align-items:center;gap:4px;
+  }
+  .improve-tag.weak{background:rgba(192,57,43,.06);border-color:rgba(192,57,43,.2);color:var(--weak)}
+  .improve-tag.suggest{background:rgba(41,128,185,.06);border-color:rgba(41,128,185,.2);color:var(--suggest)}
+  .improve-tag.strong{background:rgba(22,160,133,.06);border-color:rgba(22,160,133,.2);color:var(--correct)}
+
+  .word-cloud{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+  .cloud-word{
+    font-size:12px;padding:3px 9px;border-radius:14px;background:var(--surface-2);
+    border:1px solid var(--border);color:var(--text-secondary);font-weight:500;
+    transition:all .15s;
+  }
+  .cloud-word:hover{border-color:var(--accent-mid);color:var(--text-primary)}
+  .cloud-word.freq-high{font-size:14px;padding:4px 11px;font-weight:600;background:var(--accent-soft);border-color:var(--accent-mid);color:var(--accent)}
+
+  /* ─── Main ─── */
+  .main{padding:32px;overflow-y:auto;max-height:calc(100vh - 57px)}
+
+  /* ─── Task Toggle ─── */
+  .task-toggle{display:flex;gap:0;margin-bottom:16px;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;width:fit-content;background:var(--surface-2)}
+  .task-btn{
+    padding:8px 18px;font-size:13px;font-weight:500;cursor:pointer;
+    border:none;background:transparent;color:var(--text-tertiary);transition:all .15s;
+  }
+  .task-btn:hover{color:var(--text-secondary)}
+  .task-btn.active{background:var(--accent);color:#fff}
+
+  /* ─── Input panel ─── */
+  .input-panel{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+    padding:24px;box-shadow:var(--shadow-sm);
+  }
+  .input-panel h2{font-family:var(--font-display);font-size:20px;font-weight:600;margin-bottom:4px}
+  .input-panel .hint{font-size:13px;color:var(--text-tertiary);margin-bottom:20px}
+  .input-panel textarea{
+    width:100%;min-height:180px;padding:16px;border:1.5px solid var(--border);border-radius:var(--radius);
+    font-family:var(--font-body);font-size:14px;line-height:1.8;resize:vertical;
+    background:var(--surface-2);color:var(--text-primary);transition:border-color .15s;
+  }
+  .input-panel textarea:focus{outline:none;border-color:var(--accent)}
+  .input-panel textarea::placeholder{color:var(--text-tertiary)}
+  .input-panel label{font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;display:block}
+  .form-group{margin-bottom:16px}
+  .btn-row{display:flex;gap:10px;margin-top:16px;justify-content:flex-end;flex-wrap:wrap}
+  .btn{
+    padding:10px 22px;border-radius:var(--radius);font-size:13px;font-weight:600;
+    cursor:pointer;transition:all .15s;border:none;display:inline-flex;align-items:center;gap:6px;
+  }
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn-primary{background:var(--accent);color:#fff}
+  .btn-primary:hover:not(:disabled){background:#234732;box-shadow:var(--shadow-md)}
+  .btn-secondary{background:var(--surface-2);color:var(--text-secondary);border:1px solid var(--border)}
+  .btn-secondary:hover:not(:disabled){background:var(--border);color:var(--text-primary)}
+  .btn-outline{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+  .btn-outline:hover:not(:disabled){background:var(--accent-soft)}
+
+  /* ─── Loading ─── */
+  .loading-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(246,245,240,.85);z-index:500;align-items:center;justify-content:center;flex-direction:column}
+  .loading-overlay.active{display:flex}
+  .loading-spinner{width:48px;height:48px;border:4px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:20px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loading-text{font-size:14px;color:var(--text-secondary);font-weight:500;text-align:center}
+  .loading-tips{font-size:13px;color:var(--text-tertiary);margin-top:12px;text-align:center;max-width:400px;min-height:40px;transition:opacity .3s}
+
+  /* ─── Grading View ─── */
+  .grading-view{display:none}
+  .grading-view.active{display:block}
+  .input-panel.hidden{display:none}
+
+  /* Tabs */
+  .tabs{display:flex;gap:0;border-bottom:1.5px solid var(--border);margin-bottom:24px;overflow-x:auto}
+  .tab{
+    padding:10px 20px;font-size:13px;font-weight:500;color:var(--text-tertiary);
+    cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1.5px;transition:all .15s;white-space:nowrap;
+  }
+  .tab:hover{color:var(--text-secondary)}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+  .tab-content{display:none}
+  .tab-content.active{display:block}
+
+  /* Prompt card */
+  .prompt-card{
+    background:linear-gradient(135deg,rgba(45,90,65,.04),rgba(45,90,65,.02));
+    border:1px solid var(--accent-mid);border-radius:var(--radius-lg);
+    padding:20px 24px;margin-bottom:24px;
+  }
+  .prompt-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .prompt-card-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--accent)}
+  .prompt-card-topic{font-size:11px;color:var(--text-tertiary);font-weight:500}
+  .prompt-card-title{font-family:var(--font-display);font-size:16px;font-weight:600;line-height:1.5;color:var(--text-primary);margin-bottom:8px}
+  .prompt-card-instruction{font-size:13px;color:var(--text-secondary);line-height:1.7;font-style:italic;border-left:3px solid var(--accent-mid);padding-left:12px}
+
+  /* Essay card (for annotated essay) */
+  .essay-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+    padding:32px;box-shadow:var(--shadow-sm);margin-bottom:24px;
+  }
+  .essay-title{font-family:var(--font-display);font-size:18px;font-weight:600;margin-bottom:6px}
+  .essay-meta{font-size:12px;color:var(--text-tertiary);margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+  .essay-body{font-size:14.5px;line-height:2;letter-spacing:-.002em}
+  .essay-body p{margin-bottom:1.2em}
+
+  /* Annotation highlights (matching the span classes from AI) */
+  .ielts-good{background:rgba(22,160,133,.1);border-bottom:2.5px solid var(--correct);color:var(--correct);border-radius:3px;padding:1px 3px;cursor:pointer;position:relative}
+  .ielts-grammar{background:rgba(230,126,34,.1);border-bottom:2.5px solid #e67e22;color:#e67e22;border-radius:3px;padding:1px 3px;cursor:pointer;position:relative}
+  .ielts-vocab{background:rgba(142,68,173,.1);border-bottom:2.5px solid #8e44ad;color:#8e44ad;border-radius:3px;padding:1px 3px;cursor:pointer;position:relative}
+  .ielts-suggest{background:rgba(41,128,185,.1);border-bottom:2.5px solid var(--suggest);color:var(--suggest);border-radius:3px;padding:1px 3px;cursor:pointer;position:relative}
+
+  /* Annotation tooltips on hover */
+  .ielts-good:hover::after,
+  .ielts-grammar:hover::after,
+  .ielts-vocab:hover::after,
+  .ielts-suggest:hover::after{
+    content:attr(data-comment);
+    position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);
+    background:#1a1a16;color:#fff;font-size:12px;font-weight:400;line-height:1.5;
+    padding:6px 12px;border-radius:6px;white-space:nowrap;max-width:320px;
+    z-index:300;pointer-events:none;
+    box-shadow:0 4px 12px rgba(0,0,0,.2);
+  }
+  .ielts-good:hover::before,
+  .ielts-grammar:hover::before,
+  .ielts-vocab:hover::before,
+  .ielts-suggest:hover::before{
+    content:'';
+    position:absolute;bottom:calc(100% + 2px);left:50%;transform:translateX(-50%);
+    border:5px solid transparent;border-top-color:#1a1a16;
+    z-index:300;pointer-events:none;
+  }
+  .ielts-good:hover, .ielts-grammar:hover, .ielts-vocab:hover, .ielts-suggest:hover{
+    z-index:250;
+  }
+
+  .hl-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)}
+  .hl-legend-item{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-secondary);font-weight:500}
+  .hl-legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+
+  /* Band Score Cards */
+  .band-cards{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+  @media(max-width:768px){.band-cards{grid-template-columns:1fr}}
+  .band-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+    padding:24px;box-shadow:var(--shadow-sm);
+  }
+  .band-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+  .band-card-title{font-family:var(--font-display);font-size:15px;font-weight:600}
+  .band-card-score{font-size:32px;font-weight:700;font-family:var(--font-mono);line-height:1}
+  .band-card-score.score-9{color:var(--band9)}
+  .band-card-score.score-8{color:var(--band8)}
+  .band-card-score.score-7{color:var(--band7)}
+  .band-card-score.score-6{color:var(--band6)}
+  .band-card-score.score-5{color:var(--band5)}
+  .band-card-score.score-4{color:var(--band4)}
+  .band-card-desc{font-size:13px;color:var(--text-secondary);line-height:1.7;margin-bottom:16px}
+  .band-card-evidence{font-size:13px;color:var(--text-secondary);line-height:1.6;padding:8px 12px;background:var(--surface-2);border-radius:var(--radius);border-left:3px solid var(--accent-mid);margin-top:8px}
+  .band-card-evidence strong{color:var(--accent);font-weight:600}
+
+  /* Feedback */
+  .feedback-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+    padding:28px;box-shadow:var(--shadow-sm);margin-bottom:20px;
+  }
+  .feedback-card h3{font-family:var(--font-display);font-size:16px;font-weight:600;margin-bottom:4px}
+  .feedback-card .feedback-sub{font-size:13px;color:var(--text-tertiary);margin-bottom:20px}
+  .feedback-list{display:flex;flex-direction:column;gap:12px}
+  .feedback-item{
+    display:flex;gap:12px;padding:16px;background:var(--surface-2);border-radius:var(--radius);
+    border-left:3px solid var(--border);transition:all .15s;
+  }
+  .feedback-item:hover{border-left-color:var(--accent-mid)}
+  .feedback-item.positive{border-left-color:var(--correct);background:rgba(22,160,133,.04)}
+  .feedback-item.negative{border-left-color:var(--weak);background:rgba(192,57,43,.04)}
+  .feedback-item.neutral{border-left-color:var(--suggest);background:rgba(41,128,185,.04)}
+  .feedback-icon{font-size:16px;flex-shrink:0;margin-top:2px}
+  .feedback-content{flex:1}
+  .feedback-title{font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:4px}
+  .feedback-text{font-size:13px;color:var(--text-secondary);line-height:1.7}
+  .feedback-example{
+    margin-top:8px;padding:10px 14px;background:var(--surface);border-radius:var(--radius);
+    border-left:3px solid var(--accent-mid);font-size:12.5px;line-height:1.8;color:var(--text-secondary);
+  }
+
+  /* Next Steps (Action Suggestions) */
+  .suggestion-list{display:flex;flex-direction:column;gap:12px}
+  .suggestion-card{
+    padding:20px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+    border-left:4px solid var(--accent);box-shadow:var(--shadow-sm);
+  }
+  .suggestion-num{font-size:11px;font-weight:600;color:var(--text-tertiary);font-family:var(--font-mono);margin-bottom:6px}
+  .suggestion-title{font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:6px}
+  .suggestion-text{font-size:13px;color:var(--text-secondary);line-height:1.7}
+
+  /* Grammar Accordion */
+  .grammar-list{display:flex;flex-direction:column;gap:10px}
+  .grammar-accordion{
+    border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface);
+    overflow:hidden;transition:all .2s;box-shadow:var(--shadow-sm);
+  }
+  .grammar-accordion:hover{
+    border-color:var(--accent-mid);box-shadow:var(--shadow-md);
+  }
+  .grammar-accordion.open{border-color:var(--accent-mid);box-shadow:var(--shadow-md)}
+  .grammar-header{
+    display:flex;align-items:center;gap:12px;padding:16px 18px;
+    cursor:pointer;user-select:none;font-size:13px;font-weight:500;color:var(--text-primary);
+    transition:background .15s;position:relative;
+  }
+  .grammar-header:hover{background:var(--accent-soft)}
+  .grammar-icon{font-size:20px;flex-shrink:0}
+  .grammar-summary{flex:1;display:flex;align-items:center;gap:10px}
+  .grammar-summary strong{font-weight:600}
+  .grammar-count-badge{
+    font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;
+    background:var(--accent-soft);color:var(--accent);white-space:nowrap;
+  }
+  .grammar-expand-hint{
+    font-size:11px;color:var(--text-tertiary);font-weight:400;
+    display:flex;align-items:center;gap:4px;margin-left:auto;margin-right:8px;white-space:nowrap;
+    opacity:.7;transition:opacity .2s;
+  }
+  .grammar-header:hover .grammar-expand-hint{opacity:1}
+  .grammar-accordion.open .grammar-expand-hint{display:none}
+  .grammar-chevron{
+    width:22px;height:22px;display:flex;align-items:center;justify-content:center;
+    transition:transform .25s ease;color:var(--accent);flex-shrink:0;
+    background:var(--accent-soft);border-radius:50%;
+  }
+  .grammar-accordion.open .grammar-chevron{transform:rotate(180deg);background:var(--accent);color:#fff}
+  .grammar-body{max-height:0;overflow:hidden;transition:max-height .35s ease}
+  .grammar-accordion.open .grammar-body{max-height:800px}
+  .grammar-body-inner{padding:0 18px 18px 58px}
+  .grammar-example{
+    padding:14px 16px;background:var(--surface-2);border-radius:var(--radius);
+    border-left:3px solid var(--accent);margin-bottom:10px;font-size:13px;line-height:1.8;color:var(--text-secondary);
+  }
+  .grammar-example:last-child{margin-bottom:0}
+  .grammar-note{font-size:12px;color:var(--text-tertiary);margin-top:8px;padding-top:8px;border-top:1px solid var(--border);line-height:1.6}
+
+  /* Coherence Flow */
+  .coherence-flow{display:flex;flex-direction:column;gap:12px}
+  .coherence-step{
+    display:flex;align-items:stretch;gap:12px;padding:16px;
+    background:var(--surface-2);border-radius:var(--radius);border:1px solid var(--border);
+  }
+  .coherence-step-num{
+    width:32px;height:32px;border-radius:50%;background:var(--accent-soft);
+    color:var(--accent);font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;font-family:var(--font-mono);
+  }
+  .coherence-step-content{flex:1}
+  .coherence-step-title{font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:2px}
+  .coherence-step-text{font-size:12px;color:var(--text-secondary);line-height:1.6}
+  .coherence-arrow{text-align:center;color:var(--text-tertiary);font-size:16px;line-height:1}
+
+  /* ─── API Key Modal ─── */
+  .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.4);z-index:1000;align-items:center;justify-content:center}
+  .modal-overlay.active{display:flex}
+  .modal-box{
+    background:var(--surface);border-radius:var(--radius-lg);padding:28px;width:460px;max-width:90vw;
+    box-shadow:var(--shadow-lg);
+  }
+  .modal-title{font-family:var(--font-display);font-size:18px;font-weight:600;margin-bottom:8px}
+  .modal-desc{font-size:13px;color:var(--text-tertiary);margin-bottom:20px;line-height:1.7}
+  .modal-input{
+    width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--radius);
+    font-size:13px;background:var(--surface-2);color:var(--text-primary);
+  }
+  .modal-input:focus{outline:none;border-color:var(--accent)}
+  .modal-input::placeholder{color:var(--text-tertiary)}
+  .modal-btn-row{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+  .modal-hint{font-size:12px;color:var(--text-tertiary);margin-top:12px;line-height:1.6}
+
+  /* ─── Fallback ─── */
+  .fallback-box{
+    background:rgba(192,57,43,.04);border:1px solid rgba(192,57,43,.2);border-radius:var(--radius-lg);
+    padding:24px;margin-bottom:24px;
+  }
+  .fallback-title{font-size:14px;font-weight:600;color:var(--weak);margin-bottom:8px}
+  .fallback-desc{font-size:13px;color:var(--text-secondary);margin-bottom:12px}
+  .fallback-textarea{width:100%;min-height:300px;padding:12px;border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font-mono);font-size:12px;line-height:1.6;background:var(--surface);color:var(--text-primary);resize:vertical}
+
+  /* ─── Animations ─── */
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .animate-in{animation:fadeIn .35s ease both}
+  .delay-1{animation-delay:.05s}
+  .delay-2{animation-delay:.1s}
+  .delay-3{animation-delay:.15s}
+
+  /* Scrollbar */
+  ::-webkit-scrollbar{width:6px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+  ::-webkit-scrollbar-thumb:hover{background:var(--text-tertiary)}
+
+  /* Word count warning */
+  .wc-warning{font-size:12px;color:var(--weak);margin-top:4px;display:none}
+  .wc-warning.show{display:block}
+  .wc-ok{font-size:12px;color:var(--correct);margin-top:4px;display:none}
+  .wc-ok.show{display:block}
+
+  /* ─── Sentence Upgrade Cards ─── */
+  .upgrade-list{display:flex;flex-direction:column;gap:16px}
+  .upgrade-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+    padding:24px 24px 16px;box-shadow:var(--shadow-sm);
+  }
+  .upgrade-original{
+    padding:14px 18px;background:rgba(192,57,43,.04);border-left:3px solid var(--weak);
+    border-radius:var(--radius);font-size:14px;line-height:1.8;color:var(--text-secondary);
+    margin-bottom:4px;position:relative;
+  }
+  .upgrade-original::before{content:'原文';position:absolute;top:-10px;left:14px;font-size:11px;font-weight:600;color:var(--weak);background:var(--surface);padding:0 8px}
+  .upgrade-arrow{text-align:center;color:var(--accent);font-size:18px;margin:6px 0;font-weight:700}
+  .upgrade-upgraded{
+    padding:14px 18px;background:rgba(22,160,133,.04);border-left:3px solid var(--correct);
+    border-radius:var(--radius);font-size:14px;line-height:1.8;color:var(--text-primary);
+    margin-bottom:12px;position:relative;
+  }
+  .upgrade-upgraded::before{content:'升级版';position:absolute;top:-10px;left:14px;font-size:11px;font-weight:600;color:var(--correct);background:var(--surface);padding:0 8px}
+  .upgrade-note{font-size:12.5px;color:var(--text-secondary);line-height:1.6;padding:8px 12px;background:var(--surface-2);border-radius:var(--radius);font-style:italic;border-left:2px solid var(--accent-mid)}
+
+  /* ─── Micro Task Cards ─── */
+  .task-list{display:flex;flex-direction:column;gap:16px}
+  .task-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+    padding:24px;box-shadow:var(--shadow-sm);transition:all .3s;
+  }
+  .task-card.completed{border-left:4px solid var(--correct);opacity:.88}
+  .task-skill-tag{
+    font-size:11px;font-weight:600;padding:3px 12px;border-radius:12px;display:inline-block;margin-bottom:12px;
+    background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent-mid);
+  }
+  .task-instruction{font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:16px;line-height:1.5}
+  .task-context{
+    padding:16px 20px;background:var(--surface-2);border-radius:var(--radius);
+    font-size:14px;line-height:1.8;color:var(--text-secondary);margin-bottom:16px;
+    border:1px solid var(--border);white-space:pre-wrap;
+  }
+  .task-answer-input{
+    width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--radius);
+    font-size:13px;background:var(--surface-2);color:var(--text-primary);font-family:var(--font-body);
+    transition:border-color .15s;margin-bottom:10px;
+  }
+  .task-answer-input:focus{outline:none;border-color:var(--accent)}
+  .task-answer-input:disabled{opacity:.75;cursor:not-allowed;background:rgba(22,160,133,.04);border-color:var(--correct);color:var(--correct);font-weight:500}
+  .task-btn-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .task-hint{
+    display:none;padding:10px 14px;background:rgba(41,128,185,.06);border:1px solid var(--accent-mid);
+    border-radius:var(--radius);font-size:12.5px;color:var(--text-secondary);line-height:1.6;
+    margin-top:10px;font-style:italic;white-space:pre-wrap;
+  }
+  .task-hint.show{display:block}
+  .task-check-btn{
+    font-size:12px;padding:6px 16px;border-radius:var(--radius);border:1px solid var(--correct);
+    background:rgba(22,160,133,.08);color:var(--correct);cursor:pointer;font-weight:600;transition:all .2s;
+  }
+  .task-check-btn:hover{background:var(--correct);color:#fff}
+  .task-check-btn.done{background:var(--correct);color:#fff;cursor:default}
+  .task-hint-toggle{
+    font-size:12px;padding:6px 16px;border-radius:var(--radius);border:1px solid var(--accent-mid);
+    background:transparent;color:var(--accent);cursor:pointer;font-weight:500;transition:all .2s;
+  }
+  .task-hint-toggle:hover{background:var(--accent-soft)}
+  .task-reset-btn{
+    font-size:12px;padding:6px 16px;border-radius:var(--radius);border:1px solid var(--border);
+    background:transparent;color:var(--text-tertiary);cursor:pointer;font-weight:500;transition:all .2s;
+  }
+  .task-reset-btn:hover{border-color:var(--text-secondary);color:var(--text-primary)}
+
+  /* ─── Completion Counter ─── */
+  .completion-counter{
+    display:flex;align-items:center;gap:10px;padding:12px 16px;
+    background:var(--accent-soft);border:1px solid var(--accent-mid);border-radius:var(--radius);
+    margin-bottom:20px;font-size:13px;color:var(--accent);font-weight:600;
+  }
+  .completion-counter-done{font-family:var(--font-mono);font-size:18px;font-weight:700}
+
+  /* ─── Stat Plain Language ─── */
+  .stat-plain{
+    font-size:11px;color:var(--text-tertiary);margin-top:4px;line-height:1.4;font-weight:400;
+  }
+  .stat-plain.good{color:var(--correct)}
+  .stat-plain.warn{color:var(--weak)}
+  .stat-plain.neutral{color:var(--suggest)}
+</style>
+</head>
+<body>
+
+<!-- ═══ Top Bar ═══ -->
+<header class="topbar">
+  <div class="topbar-brand">
+    <div class="topbar-logo">IELTS</div>
+    <span class="topbar-title">IELTS Essay Grader</span>
+  </div>
+  <nav class="topbar-nav">
+    <button class="sidebar-toggle" onclick="toggleSidebar()" title="侧边栏">☰</button>
+    <a onclick="showApiKeyModal()">⚙ 设置</a>
+    <a onclick="resetAll()">✏ 新批改</a>
+  </nav>
+  <div class="topbar-user">
+    <div class="topbar-avatar" onclick="showApiKeyModal()" title="设置 API Key">S</div>
+  </div>
+</header>
+
+<!-- ═══ Loading Overlay ═══ -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">正在对照官方量表进行评分...</div>
+  <div class="loading-tips" id="loadingTips">正在逐条对照 Band Descriptors 进行定档...</div>
+</div>
+
+<!-- ═══ API Key Modal ═══ -->
+<div class="modal-overlay" id="apiKeyModal">
+  <div class="modal-box">
+    <div class="modal-title">🔑 API 密钥配置</div>
+    <div class="modal-desc">请输入你的 DeepSeek API Key。密钥仅存储在本地浏览器中，不会上传到任何服务器。</div>
+    <input class="modal-input" id="apiKeyInput" type="password" placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off">
+    <div class="modal-btn-row">
+      <button class="btn btn-secondary" onclick="closeApiKeyModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveApiKey()">保存</button>
+    </div>
+    <div class="modal-hint">💡 可在 <a href="https://platform.deepseek.com/api_keys" target="_blank" style="color:var(--accent)">platform.deepseek.com</a> 获取你的 API Key</div>
+  </div>
+</div>
+
+<!-- ═══ App Layout ═══ -->
+<div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebar()"></div>
+<div class="app">
+
+  <!-- ─── Sidebar ─── -->
+  <aside class="sidebar" id="sidebar">
+
+    <!-- Overall Score -->
+    <div class="sidebar-section animate-in">
+      <div class="sidebar-heading">总分概览</div>
+      <div class="overall-band">
+        <div class="overall-band-label">Overall Band Score</div>
+        <div class="overall-band-value" id="overallBandValue" style="color:var(--text-tertiary);font-size:20px;font-weight:400">等待批改...</div>
+        <div class="overall-band-label2">雅思官方评分标准</div>
+      </div>
+
+      <div class="band-overview" style="margin-top:16px">
+        <div class="band-row">
+          <span class="band-label">写作任务完成</span>
+          <div class="band-bar-track"><div class="band-bar-fill" id="taBar" style="width:0%"><span id="taScore">-</span></div></div>
+        </div>
+        <div class="band-row">
+          <span class="band-label">连贯与衔接</span>
+          <div class="band-bar-track"><div class="band-bar-fill" id="ccBar" style="width:0%"><span id="ccScore">-</span></div></div>
+        </div>
+        <div class="band-row">
+          <span class="band-label">词汇多样性</span>
+          <div class="band-bar-track"><div class="band-bar-fill" id="lrBar" style="width:0%"><span id="lrScore">-</span></div></div>
+        </div>
+        <div class="band-row">
+          <span class="band-label">语法多样性与准确性</span>
+          <div class="band-bar-track"><div class="band-bar-fill" id="graBar" style="width:0%"><span id="graScore">-</span></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="sidebar-section animate-in delay-1" id="statsSection">
+      <div class="sidebar-heading">基础统计</div>
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="statWords">-</div>
+          <div class="stat-label">总词数</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statSentences">-</div>
+          <div class="stat-label">句子数</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statAvgLen">-</div>
+          <div class="stat-label">平均句长</div>
+          <div class="stat-plain" id="statAvgLenPlain"></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statUniqueWords">-</div>
+          <div class="stat-label">不同用词数</div>
+        </div>
+        <div class="stat-card" style="grid-column:span 2">
+          <div class="stat-value" id="statTtr" style="font-size:16px">-</div>
+          <div class="stat-label">词汇丰富度 (TTR)</div>
+          <div class="stat-plain" id="statTtrPlain"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Issue Tags (filled dynamically) -->
+    <div class="sidebar-section animate-in delay-2" id="issuesSection" style="display:none">
+      <div class="sidebar-heading">问题标签</div>
+      <div class="improve-tags" id="issueTags"></div>
+    </div>
+
+  </aside>
+
+  <!-- ─── Main ─── -->
+  <main class="main">
+
+    <!-- Input Panel -->
+    <div class="input-panel animate-in" id="inputPanel">
+      <h2>上传作文，获取专业批改</h2>
+      <p class="hint">选择任务类型，填写作文题目与你的作答内容，AI 考官将从四个维度为你评分并给出详细反馈</p>
+
+      <!-- Task Toggle -->
+      <div class="form-group">
+        <label>任务类型</label>
+        <div class="task-toggle" id="taskToggle">
+          <button class="task-btn" onclick="setTaskType('task1')">Task 1 (小作文)</button>
+          <button class="task-btn active" onclick="setTaskType('task2')">Task 2 (大作文)</button>
+        </div>
+        <div class="wc-warning" id="wcWarning">⚠️ 当前文章字数未达到 Task 最低要求，TA 最高将被限制为 5.0 分</div>
+        <div class="wc-ok" id="wcOk">✅ 字数达标</div>
+      </div>
+
+      <div class="form-group">
+        <label>作文题目 / Essay Prompt</label>
+        <textarea id="promptInput" style="min-height:100px;background:var(--surface);border:1.5px solid var(--border);font-family:var(--font-body);font-size:13px;line-height:1.7;resize:vertical;padding:12px;border-radius:var(--radius)" placeholder="在此粘贴雅思作文题目..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>你的作文 / Your Essay</label>
+        <textarea id="essayInput" placeholder="在此粘贴你的作文..." oninput="updateStats()"></textarea>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="loadSample()">加载示例</button>
+        <button class="btn btn-primary" id="gradeBtn" onclick="startGrading()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19.5 3 21l1.5-4L16.5 3.5Z"/></svg>
+          开始批改
+        </button>
+      </div>
+    </div>
+
+    <!-- Grading View -->
+    <div class="grading-view" id="gradingView">
+
+      <!-- Action buttons -->
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-bottom:16px">
+        <button class="btn btn-outline" onclick="resetToEdit()">✏ 修改后重新批改</button>
+        <button class="btn btn-primary" onclick="downloadMarkdown()" id="exportBtn" style="display:none">📥 导出 Markdown</button>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab(this,'tab-overview')">评分总览</div>
+        <div class="tab" onclick="switchTab(this,'tab-text')">作文批注</div>
+        <div class="tab" onclick="switchTab(this,'tab-grammar')">语法分析</div>
+        <div class="tab" onclick="switchTab(this,'tab-upgrades')">升级示范</div>
+        <div class="tab" onclick="switchTab(this,'tab-feedback')">详细反馈</div>
+        <div class="tab" onclick="switchTab(this,'tab-tasks')">巩固练习<span id="tabTaskBadge" style="display:none;font-size:10px;margin-left:4px;background:var(--accent);color:#fff;padding:1px 5px;border-radius:8px;font-weight:700"></span></div>
+        <div class="tab" onclick="switchTab(this,'tab-actions')">行动建议</div>
+      </div>
+
+      <!-- Tab: Overview -->
+      <div class="tab-content active" id="tab-overview">
+        <div class="prompt-card animate-in" id="overviewPrompt">
+          <div class="prompt-card-header">
+            <span class="prompt-card-label" id="overviewTaskType">Task 2</span>
+            <span class="prompt-card-topic" id="overviewTopic">雅思真题</span>
+          </div>
+          <div class="prompt-card-instruction" id="overviewPromptText"></div>
+        </div>
+        <div class="band-cards animate-in delay-1" id="bandCardsContainer"></div>
+      </div>
+
+      <!-- Tab: Annotated Essay -->
+      <div class="tab-content" id="tab-text">
+        <div class="essay-card animate-in" id="annotatedEssayCard">
+          <div class="essay-title">批注作文</div>
+          <div class="essay-meta" id="annotatedMeta"></div>
+          <div class="essay-body" id="annotatedBody"></div>
+          <div class="hl-legend">
+            <div class="hl-legend-item"><span class="hl-legend-dot" style="background:var(--correct)"></span>优秀表达</div>
+            <div class="hl-legend-item"><span class="hl-legend-dot" style="background:#e67e22"></span>语法问题</div>
+            <div class="hl-legend-item"><span class="hl-legend-dot" style="background:#8e44ad"></span>词汇误用</div>
+            <div class="hl-legend-item"><span class="hl-legend-dot" style="background:var(--suggest)"></span>建议修改</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Grammar Analysis -->
+      <div class="tab-content" id="tab-grammar">
+        <div class="essay-card animate-in" style="padding:28px">
+          <h3 style="font-family:var(--font-display);font-size:16px;font-weight:600;margin-bottom:20px">语法错误分析</h3>
+          <div class="grammar-list" id="grammarList"></div>
+        </div>
+      </div>
+
+      <!-- Tab: Feedback -->
+      <div class="tab-content" id="tab-feedback">
+        <div id="feedbackContainer"></div>
+      </div>
+
+      <!-- Tab: Action Suggestions (was Training Plan) -->
+      <div class="tab-content" id="tab-actions">
+        <div class="feedback-card animate-in">
+          <h3>🎯 下一步行动建议</h3>
+          <p class="feedback-sub">根据本次作文暴露的问题，优先解决以下 3 个关键改进点</p>
+          <div class="suggestion-list" id="suggestionList"></div>
+        </div>
+      </div>
+
+      <!-- Tab: Sentence Upgrades -->
+      <div class="tab-content" id="tab-upgrades">
+        <div class="essay-card animate-in" style="padding:28px">
+          <h3 style="font-family:var(--font-display);font-size:16px;font-weight:600;margin-bottom:4px">📝 逐句升级示范</h3>
+          <p style="font-size:13px;color:var(--text-tertiary);margin-bottom:20px">从你的作文中挑选最具升级潜力的句子，展示如何从"能懂"变成"高分"</p>
+          <div class="upgrade-list" id="upgradeList"></div>
+        </div>
+      </div>
+
+      <!-- Tab: Micro Tasks -->
+      <div class="tab-content" id="tab-tasks">
+        <div class="essay-card animate-in" style="padding:28px">
+          <h3 style="font-family:var(--font-display);font-size:16px;font-weight:600;margin-bottom:4px">🎯 巩固练习</h3>
+          <p style="font-size:13px;color:var(--text-tertiary);margin-bottom:20px">根据你本次作文最弱的环节定制的刻意练习，动手改写才能真正进步</p>
+          <div id="taskCompletionCounter"></div>
+          <div class="task-list" id="taskList"></div>
+        </div>
+      </div>
+
+      <!-- Fallback area -->
+      <div id="fallbackArea"></div>
+
+    </div>
+
+  </main>
+
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// CONFIG & STATE
+const APP_VERSION = '2.3.0'; // Few-Shot Anchoring + Hard Constraints + Task1 Full Descriptors
+// ══════════════════════════════════════════════════════════════
+let currentTaskType = 'task2'; // 'task1' or 'task2'
+let gradingResult = null;
+let lastStats = null;
+let lastPromptText = '';
+let lastEssayText = '';
+let isGrading = false;
+const LOADING_TIPS = [
+  '正在逐条对照 Band Descriptors 进行定档...',
+  '正在分析词汇多样性与搭配准确性...',
+  '正在扫描语法结构与中式英语问题...',
+  '正在评估连贯衔接与逻辑推进...',
+  '正在汇总 4 维度评分并计算总分...',
+  '正在生成个性化改进建议...'
+];
+let tipInterval = null;
+
+// ══════════════════════════════════════════════════════════════
+// TASK TOGGLE
+// ══════════════════════════════════════════════════════════════
+function setTaskType(type) {
+  currentTaskType = type;
+  document.querySelectorAll('.task-btn').forEach(b => b.classList.remove('active'));
+  if (type === 'task1') {
+    document.querySelector('.task-btn:first-child').classList.add('active');
+  } else {
+    document.querySelector('.task-btn:last-child').classList.add('active');
+  }
+  updateStats();
+}
+
+// ══════════════════════════════════════════════════════════════
+// STATISTICS
+// ══════════════════════════════════════════════════════════════
+function computeStats(text) {
+  if (!text.trim()) return null;
+  const words = text.trim().split(/[\s\n\r]+/).filter(w => w.length > 0);
+  const wordCount = words.length;
+  const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+  const sentenceCount = sentences.length;
+  const avgSentenceLength = sentenceCount > 0 ? (wordCount / sentenceCount) : 0;
+  const wordSet = new Set(words.map(w => w.toLowerCase().replace(/[^a-z]/g, '')));
+  const uniqueWords = wordSet.size;
+  const ttr = wordCount > 0 ? (uniqueWords / wordCount) : 0;
+  return { wordCount, sentenceCount, avgSentenceLength: +avgSentenceLength.toFixed(1), uniqueWords, ttr: +ttr.toFixed(2) };
+}
+
+function updateStats() {
+  const essayText = document.getElementById('essayInput').value;
+  const stats = computeStats(essayText);
+  const wcWarning = document.getElementById('wcWarning');
+  const wcOk = document.getElementById('wcOk');
+
+  if (!stats) {
+    wcWarning.classList.remove('show');
+    wcOk.classList.remove('show');
+    return;
+  }
+
+  const minWords = currentTaskType === 'task1' ? 150 : 250;
+  if (stats.wordCount < minWords) {
+    wcWarning.textContent = `⚠️ 当前词数 ${stats.wordCount} < ${minWords} 词最低要求，TA 最高将被限制为 5.0 分`;
+    wcWarning.classList.add('show');
+    wcOk.classList.remove('show');
+  } else {
+    wcWarning.classList.remove('show');
+    wcOk.textContent = `✅ 字数达标 (${stats.wordCount} 词 ≥ ${minWords} 词)`;
+    wcOk.classList.add('show');
+  }
+}
+
+function loadSample() {
+  const task1Prompt = 'The bar chart below shows the percentage of people in three different age groups who used the internet for shopping in a European country in 2020.\n\nSummarise the information by selecting and reporting the main features, and make comparisons where relevant.\n\n📊 图表核心数据：\n- 16-30岁：网购比例最高，达 85%\n- 31-50岁：网购比例居中，达 60%\n- 51岁以上：网购比例最低，仅 20%';
+  const task1Essay = 'The bar chart shows the information about how many percentage of people buy things on the internet in a European country in 2020. They are divided into three age groups.\n\nOverall, young people like shopping on the internet more than old people. The group of 16-30 age has the most biggest percentage, and the group of 51+ has the lowest percentage.\n\nIn 2020, the percentage of young people aged 16 to 30 who buy things online is 85%. It is a very big number. Next, the middle age group from 31 to 50 years old is lower. It was 60%. Finally, the old people group who are older than 51, they only have 20% to use the internet for shopping.\n\nIn conclusion, shopping online is popular for young people, but for old people it is not very popular. The difference between the highest and lowest is 65%, which is very big.';
+  const task2Prompt = 'Some people believe that the government should fund spending on sports facilities. Others think that money should be allocated to other public services instead. Discuss both views and give your own opinion.';
+  const task2Essay = 'In many countries, there is a debate about whether the government should spend money on sports or other public services. In my opinion, although sports are important for health, other services such as education and healthcare are more essential for society.\n\nOn the one hand, investing in sports facilities has several benefits. Firstly, regular exercise helps people stay healthy and reduces the burden on the healthcare system. For example, in the UK, the government built many public gyms and swimming pools, which encourages people to exercise regularly. Secondly, sports bring communities together and create a sense of belonging. People who participate in sports often feel happier and more active. Therefore, funding sports can improve the quality of life.\n\nOn the other hand, other public services are more important than sports. Education is the foundation of a developed country. Without good schools and universities, people cannot get good jobs and contribute to the economy. Similarly, healthcare is essential because everyone needs medical treatment at some point. In Japan, the government spends more on hospitals than on sports, and the people there enjoy one of the highest life expectancies in the world.\n\nSome people argue that sports are less important than education or healthcare, but I believe that both are necessary. The government should allocate a reasonable amount of money to sports while ensuring that education and healthcare are well funded. In conclusion, I think the government should fund both, but priority should be given to education and healthcare.';
+  if (currentTaskType === 'task1') {
+    document.getElementById('promptInput').value = task1Prompt;
+    document.getElementById('essayInput').value = task1Essay;
+  } else {
+    document.getElementById('promptInput').value = task2Prompt;
+    document.getElementById('essayInput').value = task2Essay;
+    setTaskType('task2');
+  }
+  updateStats();
+}
+
+// ══════════════════════════════════════════════════════════════
+// API KEY MODAL
+// ══════════════════════════════════════════════════════════════
+function showApiKeyModal() {
+  document.getElementById('apiKeyInput').value = localStorage.getItem('deepseek_api_key') || '';
+  document.getElementById('apiKeyModal').classList.add('active');
+}
+
+function closeApiKeyModal() {
+  document.getElementById('apiKeyModal').classList.remove('active');
+}
+
+function saveApiKey() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (key) {
+    localStorage.setItem('deepseek_api_key', key);
+    closeApiKeyModal();
+  } else {
+    alert('请输入有效的 API Key');
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// LOADING
+// ══════════════════════════════════════════════════════════════
+function showLoading() {
+  document.getElementById('loadingOverlay').classList.add('active');
+  const tipsEl = document.getElementById('loadingTips');
+  let idx = 0;
+  tipsEl.textContent = LOADING_TIPS[0];
+  tipInterval = setInterval(() => {
+    idx = (idx + 1) % LOADING_TIPS.length;
+    tipsEl.style.opacity = '0';
+    setTimeout(() => {
+      tipsEl.textContent = LOADING_TIPS[idx];
+      tipsEl.style.opacity = '1';
+    }, 200);
+  }, 3000);
+  document.getElementById('gradeBtn').disabled = true;
+}
+
+function hideLoading() {
+  document.getElementById('loadingOverlay').classList.remove('active');
+  if (tipInterval) { clearInterval(tipInterval); tipInterval = null; }
+  document.getElementById('gradeBtn').disabled = false;
+  isGrading = false;
+}
+
+// ══════════════════════════════════════════════════════════════
+// API CALL
+// ══════════════════════════════════════════════════════════════
+const TASK1_DESCRIPTORS = `### Task 1 Band Descriptors
+
+#### Task Achievement (TA)
+- Band 9: Fully satisfies all the requirements of the task; clearly presents a fully developed response.
+- Band 8: Covers all requirements of the task sufficiently; presents, highlights and illustrates key features/bullet points clearly and appropriately.
+- Band 7: Covers the requirements of the task; presents a clear overview of main trends, differences or stages; presents, highlights and illustrates key features/bullet points clearly.
+- Band 6: Addresses the requirements of the task; presents an overview with information appropriately selected; presents and adequately highlights key features/bullet points but details may be irrelevant or inappropriate.
+- Band 5: Generally addresses the task; the format may be inappropriate in places; recounts detail mechanically with no clear overview; there may be no data to support the description.
+- Band 4: Attempts to address the task but fails to give a clear overview; may present details mechanically and describes without presenting clear data.
+
+#### Coherence and Cohesion (CC)
+- Band 9: Skillfully manages paragraphing; information and data are presented in a logically sequenced and fully coherent manner that attracts no attention.
+- Band 8: Sequences data and information logically; manages all aspects of cohesion well; uses paragraphing sufficiently and appropriately; clearly organizes data comparisons and trends.
+- Band 7: Logically organizes data and information; there is clear progression throughout the report; uses a range of cohesive devices appropriately to compare and contrast data, though there may be some under-/over-use.
+- Band 6: Arranges data and information coherently with a clear overall progression; uses cohesive devices effectively but may be mechanical or faulty when comparing data; may not always use referencing clearly.
+- Band 5: Presents data with some organization but lacks overall progression; makes inadequate, inaccurate, or over-use of cohesive devices; may be repetitive; paragraphing may be inadequate.
+- Band 4: Presents data but not arranged coherently; no clear progression in the description; uses only basic cohesive devices which may be inaccurate or repetitive.
+
+#### Lexical Resource (LR)
+- Band 9: Uses a wide range of vocabulary with very natural and sophisticated control; precise data description terminology used effortlessly (e.g., plateaued, fluctuated, peaked at, accounted for).
+- Band 8: Uses a wide range of vocabulary fluently to convey precise data meanings; skillfully uses less common lexical items for trends and comparisons; rare errors in spelling/word formation.
+- Band 7: Uses a sufficient range of vocabulary for data description with some flexibility and precision; uses less common data-related lexical items (e.g., significant increase, marginal decline, demographic) with some awareness of collocation; occasional errors.
+- Band 6: Uses an adequate range of vocabulary for describing data; attempts to use less common data vocabulary but with some inaccuracy; errors in spelling/word formation do not impede communication.
+- Band 5: Uses a limited range of vocabulary minimally adequate for data description; may make noticeable errors in spelling and word formation that cause some difficulty for the reader; over-relies on basic words (increase, decrease, big, small).
+- Band 4: Uses only basic vocabulary which may be repetitive or inappropriate for data description; limited control of word formation; errors cause strain for the reader.
+
+#### Grammatical Range and Accuracy (GRA)
+- Band 9: Uses a wide range of structures with full flexibility and accuracy; rare minor errors only as 'slips'; appropriate tense usage perfectly maintained throughout.
+- Band 8: Uses a wide range of structures; majority of sentences are error-free; very occasional errors or inappropriacies; tense usage consistent and appropriate (past for historical data, present for current trends).
+- Band 7: Uses a variety of complex structures; produces frequent error-free sentences; good control of grammar and punctuation with few errors; tense usage predominantly accurate across the response.
+- Band 6: Uses a mix of simple and complex sentence forms; makes some grammar/punctuation errors but rarely reduce communication; tense usage may be inconsistent but meaning is generally clear.
+- Band 5: Uses only a limited range of structures; attempts complex sentences but these tend to be less accurate than simple ones; frequent grammatical errors and faulty punctuation; tense errors may cause difficulty for the reader.
+- Band 4: Uses only a very limited range of structures with rare use of subordinate clauses; some structures accurate but errors predominate; tense usage often incorrect or inconsistent.`;
+
+const FEWSHOT_TASK1 = `### 评分锚定基准 (Task 1 Few-Shot Reference)
+
+#### [Task 1 样本 1 - 官方判定：Band 5.0]
+- 题目类型：柱状图 (Bar Chart) 数据描述
+- 学生原始作文：
+The bar chart shows information about online shopping habits in 2020. In the 16-30 age group, the percentage is very high, it is 85%. Many young people like to buy things on the internet because it is convenient. Then, the middle age group from 31 to 50 is lower than the young people. The number is 60%. Finally, the old people group who are older than 51, they only have 20% to use the internet for shopping. In conclusion, shopping online is popular for young people, but for old people it is not very popular. The difference between the highest and lowest is 65%, which is very big.
+- 官方考官真实判定与逻辑分析：
+  * Task Achievement (TA): 5.0. 考生虽然提及了所有数据，但未能提供一个清晰的学术报告概述（Overview）。致命的是，考生在结尾段使用了主观推论（"because it is convenient"），并且使用了 "In conclusion" 错误结构，未能客观总结图表的核心特征。
+  * Coherence & Cohesion (CC): 5.0. 衔接手段（Linkers）极其机械且口语化（Then, Finally）。段落划分缺乏学术逻辑，信息堆砌较为混乱。
+  * Lexical Resource (LR): 5.0. 词汇量极度匮乏且大量重复（very high, lower, popular, big）。诸如 "old people group" 属于非学术性口语表达，缺乏数据报告专用词（如 senior citizens, demographics）。
+  * Grammatical Range & Accuracy (GRA): 5.0. 全文几乎全部使用简单句。存在典型的中式英语句式和主语重复（"the old people group..., they only have..."）。时态混乱，未能统一使用过去时描述历史数据。
+  * Overall Score: 5.0
+
+#### [Task 1 样本 2 - 官方判定：Band 7.5]
+- 题目类型：柱状图 (Bar Chart) 数据描述
+- 学生原始作文：
+The bar chart delineates the proportion of citizens engaging in online shopping across three distinct age groups in a European nation in 2020. Overall, it is manifest that internet shopping prevalence was inversely proportional to age, with the youngest demographic exhibiting the highest participation, while the elderly group registered the lowest figure. Specifically, the vast majority of young adults aged 16 to 30 utilized the internet for commercial transactions, peaking at 85%. This was followed by a moderate percentage among middle-aged consumers (31–50 years old), which accounted for precisely 60%. In stark contrast, senior citizens aged 51 and above showed a significantly lower enthusiasm for e-commerce, with only one-fifth of this subpopulation participating.
+- 官方考官真实判定与逻辑分析：
+  * Task Achievement (TA): 8.0. 产生了一个极其清晰且高度概括的 Overview，成功指出了数据与年龄的逆相关性（inversely proportional）。核心特征和对比（in stark contrast）处理得非常熟练，数据汇报精准到位。
+  * Coherence & Cohesion (CC): 8.0. 段落组织井井有条。衔接词运用非常自然且多样化（Overall, Specifically, This was followed by, In stark contrast），信息与逻辑推进非常流畅。
+  * Lexical Resource (LR): 7.0. 展现了良好的词汇广度与精确的学术搭配（delineates, prevalence, youngest demographic, subpopulation）。但由于极少量的固定词汇轻微正误用，未能达到 8 分。
+  * Grammatical Range & Accuracy (GRA): 7.0. 成功运用了多种复杂句式，包括非谓语动词伴随结构（peaking at...）和定语从句（which accounted for...）。多数句子无错误，但整体句型多样性距离 8 分仍有微弱空间。
+  * Overall Score: 7.5`;
+
+const FEWSHOT_TASK2 = `### 评分锚定基准 (Task 2 Few-Shot Reference)
+
+#### [Task 2 样本 1 - 官方判定：Band 5.5]
+- 题目类型：双边讨论 (Discuss both views and give your opinion)
+- 学生原始作文：
+Some people think universities should provide knowledge for jobs. Other people think university should focus on pure science. I think both sides have good points. Today, finding a good job is very difficult for young graduates. If university only teaches theory, students cannot find work after graduation. This is bad for society and economy. However, pure science is also important because without it we cannot have new technology like smart phones. In my opinion, university should balance both things. They should teach skills for career and also give time for research.
+- 官方考官真实判定与逻辑分析：
+  * Task Achievement (TA): 6.0. 考生回应了题目的两个部分，并给出了自己的立场（balance both things），但论证流于表面，缺乏深入的逻辑展开，立论流于口语化。
+  * Coherence & Cohesion (CC): 5.0. 衔接手段极为单一。考生过度依赖简单连接词（If, However, Because），段落之间的逻辑过渡生硬，没有清晰的论证推进流（Flow）。
+  * Lexical Resource (LR): 5.0. 词汇选择非常受限（good job, very difficult, bad, new technology）。反复使用低阶词汇，缺乏学术讨论所必须的变体和高阶词汇（如 employment opportunities, academic research）。
+  * Grammatical Range & Accuracy (GRA): 6.0. 尽管句子简单，但多数句子的基本语法是准确的，能够传达基本意思。但由于缺乏复杂句、从句以及虚拟语气等高阶结构，GRA 无法达到 7 分。
+  * Overall Score: 5.5
+
+#### [Task 2 样本 2 - 官方判定：Band 8.0]
+- 题目类型：同意与否 (To what extent do you agree or disagree)
+- 学生原始作文：
+Whether higher education institutions should function primarily as career training grounds or intellectual sanctuaries remains a subject of intense debate. Personally, I strongly adhere to the view that while university education must equip students with practical employability skills, its foundational mission should be centered on academic research and intellectual enrichment. To begin with, an over-emphasis on vocational training risks transforming universities into mere corporate feeder programs, which compromises the depth of critical thinking. Higher education should foster intellectual curiosity that transcends immediate financial gains. Nonetheless, we cannot ignore the socio-economic reality that graduates require specialized knowledge to secure employment in an increasingly competitive market. Therefore, a hybrid pedagogical approach, integrating theoretical rigor with industrial applications, represents the optimal paradigm.
+- 官方考官真实判定与逻辑分析：
+  * Task Achievement (TA): 8.0. 考生的个人立场极其鲜明且贯穿全文（Let motifs consistent throughout）。对论点的论证极其充分、深入，展示了非常成熟的思辨和批判性逻辑。
+  * Coherence & Cohesion (CC): 8.0. 文章的逻辑架构非常高级。使用了高级的凝聚手段（intellectual sanctuaries, mere corporate feeder programs）在语意上进行无形衔接，信息层层递进，毫无断层。
+  * Lexical Resource (LR): 8.0. 词汇资源极其丰富且地道（intellectual sanctuaries, transcend immediate financial gains, hybrid pedagogical approach）。准确掌握了复杂的搭配（collocation）和语境风格。
+  * Grammatical Range & Accuracy (GRA): 8.0. 熟练操纵了大量复杂句式（名词从句、让步状语从句、非谓语后置定语）。几乎没有任何语法笔误，句型极为灵活多样。
+  * Overall Score: 8.0`;
+
+const TASK2_DESCRIPTORS = `### Task 2 Band Descriptors
+
+#### Task Response (TR)
+- **Band 9**: Fully addresses all parts of the task; presents a fully developed position with relevant, fully extended and well supported ideas.
+- **Band 8**: Sufficiently addresses all parts of the task; presents a well-developed response to the question with relevant, extended and supported ideas.
+- **Band 7**: Addresses all parts of the task; presents a clear position throughout the response; presents, extends and supports main ideas, but there may be a tendency to over-generalise and/or supporting ideas may lack focus.
+- **Band 6**: Addresses all parts of the task although some parts may be more fully covered than others; presents a relevant position although the conclusions may become unclear or repetitive; presents relevant main ideas but some may be inadequately developed/unclear.
+- **Band 5**: Addresses the task only partially; the format may be inappropriate in places; expresses a position but the development is not always clear and there may be no conclusions drawn; presents some main ideas but these are limited and not sufficiently developed; there may be irrelevant detail.
+- **Band 4**: Responds to the task only in a minimal way or the answer is tangential; the format may be inappropriate; presents a position but this is unclear; presents some main ideas but these are difficult to identify and may be repetitive, irrelevant or not well supported.
+
+#### Coherence and Cohesion (CC)
+- **Band 9**: Uses cohesion in such a way that it attracts no attention; skillfully manages paragraphing.
+- **Band 8**: Sequences information and ideas logically; manages all aspects of cohesion well; uses paragraphing sufficiently and appropriately.
+- **Band 7**: Logically organises information and ideas; there is clear progression throughout; uses a range of cohesive devices appropriately although there may be some under-/over-use.
+- **Band 6**: Arranges information and ideas coherently and there is a clear overall progression; uses cohesive devices effectively, but cohesion within and/or between sentences may be faulty or mechanical; may not always use referencing clearly or appropriately; uses paragraphing, but not always logically.
+- **Band 5**: Presents information with some organisation but there may be a lack of overall progression; makes inadequate, inaccurate or over-use of cohesive devices; may be repetitive because of lack of referencing and substitution; may not write in paragraphs, or paragraphing may be inadequate.
+- **Band 4**: Presents information and ideas but these are not arranged coherently and there is no clear progression in the response; uses some basic cohesive devices but these may be inaccurate or repetitive; may not write in paragraphs or their use may be confusing.
+
+#### Lexical Resource (LR)
+- **Band 9**: Uses a wide range of vocabulary with very natural and sophisticated control of lexical features; rare minor errors occur only as 'slips'.
+- **Band 8**: Uses a wide range of vocabulary fluently and flexibly to convey precise meanings; skillfully uses uncommon lexical items but there may be occasional inaccuracies in word choice and collocation; produces rare errors in spelling and/or word formation.
+- **Band 7**: Uses a sufficient range of vocabulary to allow some flexibility and precision; uses less common lexical items with some awareness of style and collocation; may produce occasional errors in word choice, spelling and/or word formation.
+- **Band 6**: Uses an adequate range of vocabulary for the task; attempts to use less common vocabulary but with some inaccuracy; makes some errors in spelling and/or word formation, but they do not impede communication.
+- **Band 5**: Uses a limited range of vocabulary, but this is minimally adequate for the task; may make noticeable errors in spelling and/or word formation that may cause some difficulty for the reader.
+- **Band 4**: Uses only basic vocabulary which may be used repetitively or which may be inappropriate for the task; has limited control of word formation and/or spelling; errors may cause strain for the reader.
+
+#### Grammatical Range and Accuracy (GRA)
+- **Band 9**: Uses a wide range of structures with full flexibility and accuracy; rare minor errors occur only as 'slips'.
+- **Band 8**: Uses a wide range of structures; the majority of sentences are error-free; makes only very occasional errors or inappropriacies.
+- **Band 7**: Uses a variety of complex structures; produces frequent error-free sentences; has good control of grammar and punctuation but may make a few errors.
+- **Band 6**: Uses a mix of simple and complex sentence forms; makes some errors in grammar and punctuation but they rarely reduce communication.
+- **Band 5**: Uses only a limited range of structures; attempts complex sentences but these tend to be less accurate than simple sentences; may make frequent grammatical errors and punctuation may be faulty; errors can cause some difficulty for the reader.
+- **Band 4**: Uses only a very limited range of structures with only rare use of subordinate clauses; some structures are accurate but errors predominate, and punctuation is often faulty.`;
+
+function buildSystemPrompt(taskType) {
+  const taskLabel = taskType === 'task1' ? 'Task 1' : 'Task 2';
+  const descriptors = taskType === 'task1' ? TASK1_DESCRIPTORS : TASK2_DESCRIPTORS;
+  const fewshotRef = taskType === 'task1' ? FEWSHOT_TASK1 : FEWSHOT_TASK2;
+
+  return `你是一位专业的 IELTS 写作考官，拥有超过 10 年的雅思写作评分经验，熟悉剑桥官方评分标准。
+
+你需要对用户提交的 IELTS Writing ${taskLabel} 作文进行评分，严格依据雅思官方 Band Descriptors 从 4 个维度分别评分，并给出 Overall Band Score。
+
+### 评分标准量表
+${descriptors}
+
+### 评分锚定基准 (Few-Shot Reference)
+以下为官方考官判定的标准样文，你必须严格按照此标准进行评分严厉度校准。请看低分样本（如 Band 5.0 / 5.5）了解扣分严苛程度；再看高分样本（如 Band 7.5 / 8.0）了解高分标准。你的给分必须与此锚定体系保持一致。
+
+${fewshotRef}
+
+### 考官心智设定 (Examiner Mindset Constraints)
+你必须严格遵守以下三条原则：
+1. **严禁脑补 (No Guessing Meaning)**：如果考生的句子因语法错误或中式英语导致一个英语母语者在无中文背景知识的情况下无法一眼看懂，你必须判定该句子为 "Impedes communication"（阻碍交流），此时 GRA 或 LR 严禁超过 Band 5.0。
+2. **严禁同情分 (No Sympathy Points)**：雅思不是中国的高考或期末考，没有"虽然写错了但写了这么多很辛苦"的同情分。只要核心特征（Task 1: Overview 缺失 / Task 2: 核心论点遗漏），TA 立刻降档至 Band 5.0 及以下。
+3. **学术严谨性审查**：将自己视为一个挑剔的大学教授。任何低级口语化词汇（如 things 替代 elements、go up 替代 increase、big / very / good 等无多样性词汇）都要在 LR 评估中留下负面记录。
+
+### 评分执行算法（三步推理法）
+对于 TA, CC, LR, GRA 四个维度，你必须严格执行以下三步推理，并记录在 output 的 evaluation_justification 中：
+1. 【定档】：从 Band 9 开始向下筛选，找出该作文完全满足的最高整分档位（如 Band 6）。
+2. 【微调】：若作文表现大幅超越该档位基准线，但未达到下一档，可给予 0.5 的上调（如 6.5）；若勉强及格且有明显下滑趋势，给予 0.5 的下调。
+3. 【举证】：必须从文章中摘录至少 2 处具体文本段落作为得分或扣分的硬证据。
+
+### 评分注意事项
+- 严格字数惩罚：如果当前是 ${taskLabel} 且词数 < ${taskType === 'task1' ? '150' : '250'}，Task Achievement (TA) 最高不得超过 Band 5.0。
+- 语法容错与独立性：区分系统性错误（主谓不一致、时态混乱）与长文偶发笔误（偶尔漏掉 s）。对于长文（>300词），不要因为偶发的拼写笔误而降档。评估四个维度时，各维度得分互不影响，严禁因为语法错漏多而顺带调低 TA 的立意分。
+- 篇幅偏见防范：严禁因文章短但无明显错误给高分，或因文章长抓到零碎错误而过度扣分。
+- 对于中文学习者，要关注中式英语的问题。
+
+### ⚠️ 强制量化数据核对清单 (Must-Compliance Checklist)
+⚠️ **硬性规则：你必须在 evaluation_justification 各维度的 analysis 字段中逐项回答下方所有问题。若缺少任何一项回答，该维度的评分将视为无效，你必须重新评估！**
+
+**GRA 查对清单**：
+- 【必答】文章共包含多少个句子？其中无错误句子（Error-free sentences）占比？（量表硬性要求：Band 7 必须有 frequent error-free sentences）
+- 【必答】列出文章使用的所有复杂句结构类型（如名词从句、定语从句、条件状语从句等），每类必须附具体例子。
+- 【硬触发】如平均句长 < 12 词，GRA 必须严格限制在 Band 5.5 及以下！须在 analysis 中明确写出"平均句长为 XX 词 < 12，因此 GRA ≤ 5.5"。
+
+**TA 查对清单（Task 1）**：
+- 【必答】题目中包含几个关键数据点？考生分别在第几段、用哪句话回应了这些数据？
+- 【必答】Overview 是否存在？是否清晰指出了主要趋势/对比？如果没有明确 Overview，TA 不得超过 Band 5.0！并在 analysis 中明确写出"Overview 缺失，因此 TA ≤ 5.0"。
+- 【必答】是否存在主观推论（如 "because ..." 之类的因果推测）？若有则视同缺少客观性，TA 减 0.5。
+
+**TA 查对清单（Task 2）**：
+- 【必答】题目包含几个子问题/论点？考生分别在哪段回应？
+- 【必答】立场是否贯穿全文？是否存在偏题或回避核心问题？
+
+**LR 查对清单**：
+- 【必答】TTR < 0.45 时，说明词汇大量重复，LR 必须 ≤ 5.0！须在 analysis 中明确写出"TTR 为 XX < 0.45，因此 LR ≤ 5.0"。
+- 【必答】TTR ≥ 0.65 时，可考虑 LR ≥ 7.0 但需结合搭配准确性。
+- 【必答】列举文章中重复出现 ≥ 3 次的词汇，判断多样性。
+- 【必答】是否有数据报告/学术讨论专用词汇？如 account for, constitute, significant, minority, majority 等，列出具体词汇。
+
+### 全文批注生成规则（核心）
+你必须在输出的 \`annotated_essay\` 字段中返回【整篇学生作文的完整文本】。在有优秀表达、错误或需要改进的文本段落处，你必须直接使用标准的 HTML 标签进行包裹。
+
+**⚠️ 重要：为了防止破坏 JSON 结构，标签内的所有属性必须严格使用单引号（'），严禁使用双引号（"）！**
+
+正确示例：<span class='ielts-grammar' data-comment='主谓不一致' data-suggest='has'>have</span>
+错误示例：<span class="ielts-grammar" data-comment="主谓不一致">...</span>
+
+可用的 class 类型：
+- \`ielts-good\`：优秀的词汇或句型搭配
+- \`ielts-grammar\`：语法或时态错误
+- \`ielts-vocab\`：词汇误用或中式英语
+- \`ielts-suggest\`：逻辑推进不顺畅，建议修改的句子
+
+请确保整篇作文没有任何漏字或文本丢失。
+
+### 输出格式
+你必须严格按照以下 JSON 结构输出，不要包含任何 Markdown 标记（如 \`\`\`json）或多余的解释性文本。
+重要：请严格按照字段顺序从上到下生成。必须先做分析推理，最后才输出分数（overall），以确保 CoT 推理的准确性。
+
+{
+  "prompt_analysis": {
+    "task_type": "${taskLabel}",
+    "core_topic": "提取的题目核心论点/图表核心信息"
+  },
+  "annotated_essay": "完整作文内容，其中包含你插入的用于高亮批注的 span 标签。请确保没有任何漏字或文本丢失。",
+  "grammar_issues_list": [
+    { "title": "错误类别(如主谓不一致)", "original": "错误原文", "correction": "正确修改", "note": "详细的语法解析" }
+  ],
+  "feedback": {
+    "strengths": [{"title": "优势项", "text": "具体描述"}],
+    "weaknesses": [{"title": "薄弱项", "text": "具体描述"}],
+    "coherence_flow": "对整篇文章段落逻辑推进和连接词使用的宏观诊断"
+  },
+  "evaluation_justification": {
+    "ta": { "analysis": "定档推理过程，**必须包含 TA 查对清单的定量核对结果**（如题目包含几个关键点/子问题、考生在哪段回应、Overview 是否存在等）", "evidence": "引用的硬证据文本", "band": 0.0 },
+    "cc": { "analysis": "关于段落连接与逻辑 progression 的深度剖析，包括连接词使用丰富度与段落推进自然度", "evidence": "引用的连接词", "band": 0.0 },
+    "lr": { "analysis": "词汇丰富度与地道搭配的对标分析，**必须包含 LR 查对清单的定量核对结果**（如 TTR 值、重复词汇列表、学术词汇使用情况等）", "evidence": "正用或误用的词组", "band": 0.0 },
+    "gra": { "analysis": "复合句使用频率及错误密度诊断，**必须包含 GRA 查对清单的定量核对结果**（如总句数、无错句占比、复杂句类型列表等）", "evidence": "长难句分析", "band": 0.0 }
+  },
+  "overall": 0.0,
+  "sentence_upgrades": [
+    {
+      "original": "学生原文中值得升级的某个完整句子",
+      "upgraded": "基于同一个意思，用更高级词汇和句式改写的升级版句子",
+      "note": "用大白话帮学生解释：你这里具体差在哪里、升级版改了什么地方（如：原文用了big在学术写作中显得不专业，升级版改用significant并补充了数据描述）"
+    }
+  ],
+  "micro_tasks": [
+    {
+      "skill": "cc/lr/gra/ta",
+      "title": "练习名称（如：衔接词升级挑战）",
+      "instruction": "对学生的白话指令（如：下面这段文章过度使用了 Firstly/Secondly/Finally，请把它们替换为更自然的衔接方式）",
+      "context": "需要学生改写的原文段落",
+      "target_text": "参考答案/示范改写版本",
+      "type": "rewrite"
+    }
+  ],
+  "next_steps": {
+    "action_1": "针对本次作文暴露的最严重问题，给出的第 1 条具体改进动作",
+    "action_2": "第 2 条具体改进动作",
+    "action_3": "第 3 条具体改进动作"
+  }
+}
+
+### ✍️ sentence_upgrades 生成规范（重要）
+你需要从学生原文中选出 3-4 个最长板的句子，给出"逐句升级示范"：
+- 优先选择那些"底子还行但表达方式拉低了分数"的句子（最具升级潜力的句子）
+- 原句和升级句要表达完全相同的核心意思（因为这是改写练习，不是重写新内容）
+- note 必须用纯中文大白话，避免任何术语（不要写"修改了主谓一致"、"提升了TTR"之类的话）
+- 每条 note 不超过 40 字
+
+### 🎯 micro_tasks 生成规范（重要）
+你需要在 4 个维度中，找到学生最弱的 1 个维度，生成 2 个针对该维度的简短的刻意练习：
+- 每道练习的 context 必须来自学生的原文（真实的错误段落）
+- type 固定为 "rewrite"
+- instruction 必须用中文大白话，直接告诉学生"这里哪里不行、应该怎么改"
+- target_text 是你给出的优秀参考答案（让学生可以对照）
+- 2 道练习的标题不要雷同
+}`;
+}
+
+function buildUserPrompt(taskType, promptText, essayText, stats) {
+  const taskLabel = taskType === 'task1' ? 'Task 1' : 'Task 2';
+  return `请对以下雅思作文进行评分。
+
+### 任务类型
+${taskLabel}
+
+### 作文题目
+${promptText}
+
+### 学生作文
+${essayText}
+
+### 基础统计数据
+- 总词数：${stats.wordCount}
+- 句子数：${stats.sentenceCount}
+- 平均句长：${stats.avgSentenceLength} 词
+- 词汇类型比（TTR）：${stats.ttr}
+- 词形数：${stats.uniqueWords}`;
+}
+
+async function callAPI(systemPrompt, userPrompt) {
+  const apiKey = localStorage.getItem('deepseek_api_key');
+  if (!apiKey) {
+    throw new Error('API_KEY_MISSING');
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 120000); // 120s timeout
+
+  try {
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        temperature: 0.3,
+        max_tokens: 8192,
+        stream: false
+      }),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errBody = await response.text();
+      throw new Error(`API Error ${response.status}: ${errBody}`);
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === 'AbortError') {
+      throw new Error('请求超时（120 秒），请检查网络后重试');
+    }
+    throw err;
+  }
+}
+
+function parseResponse(text) {
+  // Remove markdown code block wrapping
+  let cleaned = text.replace(/^```json\s*/i, '').replace(/```$/, '').trim();
+
+  // Try to parse JSON
+  try {
+    const json = JSON.parse(cleaned);
+    return { success: true, data: json };
+  } catch (e) {
+    // Try to find JSON within the text
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        const json = JSON.parse(jsonMatch[0]);
+        return { success: true, data: json };
+      } catch (e2) {
+        return { success: false, raw: cleaned, error: e2.message };
+      }
+    }
+    return { success: false, raw: cleaned, error: e.message };
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// MAIN GRADING FLOW
+// ══════════════════════════════════════════════════════════════
+async function startGrading() {
+  if (isGrading) return; // Debounce: prevent duplicate calls
+  isGrading = true;
+
+  const promptText = document.getElementById('promptInput').value.trim();
+  const essayText = document.getElementById('essayInput').value.trim();
+
+  if (!promptText) { alert('请填写作文题目'); return; }
+  if (!essayText) { alert('请填写你的作文'); return; }
+
+  const apiKey = localStorage.getItem('deepseek_api_key');
+  if (!apiKey) { showApiKeyModal(); return; }
+
+    const stats = computeStats(essayText);
+  if (!stats) { alert('作文内容为空'); return; }
+
+  // Save to global state for export
+  lastStats = stats;
+  lastPromptText = promptText;
+  lastEssayText = essayText;
+
+  // Hide input, show loading
+  document.getElementById('inputPanel').classList.add('hidden');
+  document.getElementById('gradingView').classList.remove('active');
+  document.getElementById('fallbackArea').innerHTML = '';
+  showLoading();
+
+  try {
+    const systemPrompt = buildSystemPrompt(currentTaskType);
+    const userPrompt = buildUserPrompt(currentTaskType, promptText, essayText, stats);
+
+    const rawResponse = await callAPI(systemPrompt, userPrompt);
+    const result = parseResponse(rawResponse);
+
+    hideLoading();
+
+    if (result.success) {
+      gradingResult = result.data;
+      renderResult(result.data, promptText, essayText, stats);
+    } else {
+      // Fallback: show raw text
+      gradingResult = null;
+      document.getElementById('gradingView').classList.add('active');
+      document.getElementById('fallbackArea').innerHTML = `
+        <div class="fallback-box">
+          <div class="fallback-title">⚠️ JSON 解析失败</div>
+          <div class="fallback-desc">AI 返回的数据格式异常，无法自动渲染。以下是原始返回内容，你可以手动查看或复制保存。</div>
+          <div class="fallback-desc" style="color:var(--weak)">错误信息：${result.error}</div>
+          <textarea class="fallback-textarea" readonly>${escHtml(rawResponse)}</textarea>
+        </div>
+      `;
+      // Render sidebar with stats and fallback info
+      renderSidebar(stats, {}, promptText);
+    }
+  } catch (err) {
+    hideLoading();
+    if (err.message === 'API_KEY_MISSING') {
+      showApiKeyModal();
+      document.getElementById('inputPanel').classList.remove('hidden');
+      return;
+    }
+    alert('评分过程出错：' + err.message);
+    document.getElementById('inputPanel').classList.remove('hidden');
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════════════════════════
+function renderResult(json, promptText, essayText, stats) {
+  document.getElementById('gradingView').classList.add('active');
+
+  // ── Sidebar ──
+  renderSidebar(stats, json.evaluation_justification || {}, promptText, json.overall);
+
+  // ── Overview Tab ──
+  const taskTypeLabel = json.prompt_analysis?.task_type || (currentTaskType === 'task1' ? 'Task 1' : 'Task 2');
+  document.getElementById('overviewTaskType').textContent = taskTypeLabel + ' · 雅思真题';
+  document.getElementById('overviewTopic').textContent = json.prompt_analysis?.core_topic || '—';
+  document.getElementById('overviewPromptText').textContent = promptText;
+
+  // Band score cards
+  const dims = ['ta', 'cc', 'lr', 'gra'];
+  const labels = ['写作任务完成情况', '连贯与衔接', '词汇资源', '语法多样性与准确性'];
+  const subtitles = ['Task Achievement', 'Coherence & Cohesion', 'Lexical Resource', 'Grammatical Range & Accuracy'];
+  const ej = json.evaluation_justification || {};
+  let cardsHtml = '';
+  const bandColors = { 9:'score-9',8:'score-8',7:'score-7',6:'score-6',5:'score-5',4:'score-4' };
+
+  dims.forEach((dim, i) => {
+    const d = ej[dim] || {};
+    const band = d.band || 0;
+    const intBand = Math.round(band);
+    const colorClass = bandColors[intBand] || 'score-6';
+    cardsHtml += `
+      <div class="band-card">
+        <div class="band-card-header">
+          <span class="band-card-title">${labels[i]}<br><span style="font-size:12px;color:var(--text-tertiary);font-weight:400">${subtitles[i]}</span></span>
+          <span class="band-card-score ${colorClass}">${band}</span>
+        </div>
+        <div class="band-card-desc">${escHtml(d.analysis || '暂无分析')}</div>
+        <div class="band-card-evidence"><strong>证据引用：</strong>${escHtml(d.evidence || '无')}</div>
+      </div>`;
+  });
+  document.getElementById('bandCardsContainer').innerHTML = cardsHtml;
+
+  // ── Annotated Essay Tab ──
+  const wordCount = stats?.wordCount || 0;
+  const sentenceCount = stats?.sentenceCount || 0;
+  document.getElementById('annotatedMeta').textContent = `${wordCount} 词 · ${sentenceCount} 句 · 批改完成`;
+  const annotatedEssay = json.annotated_essay || essayText;
+  document.getElementById('annotatedBody').innerHTML = formatEssayParagraphs(annotatedEssay);
+
+  // ── Grammar Tab ──
+  const issues = json.grammar_issues_list || [];
+  if (issues.length === 0) {
+    document.getElementById('grammarList').innerHTML = '<div style="font-size:13px;color:var(--text-tertiary);padding:20px;text-align:center">⚠️ 本次分析暂未检测到显著语法问题</div>';
+  } else {
+    let gHtml = '';
+    // Total error count badge
+    gHtml += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;font-size:13px;color:var(--text-secondary)">
+      <span style="font-weight:700;font-size:22px;font-family:var(--font-mono);color:var(--weak)">${issues.length}</span>
+      <span>处语法问题 · 点击每条可展开查看详情与修改建议</span>
+    </div>`;
+    issues.forEach((item, idx) => {
+      gHtml += `
+        <div class="grammar-accordion" onclick="toggleGrammar(this)">
+          <div class="grammar-header">
+            <span class="grammar-icon">${idx === 0 ? '🔴' : idx === 1 ? '🟠' : '🟡'}</span>
+            <span class="grammar-summary">
+              <strong>${escHtml(item.title)}</strong>
+              <span class="grammar-count-badge">${idx + 1}</span>
+            </span>
+            <span class="grammar-expand-hint">点击展开 ▼</span>
+            <span class="grammar-chevron"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg></span>
+          </div>
+          <div class="grammar-body">
+            <div class="grammar-body-inner">
+              <div class="grammar-example" style="border-left-color:var(--weak)">
+                <div style="font-size:11px;font-weight:600;color:var(--weak);margin-bottom:4px">❌ 原文</div>
+                ${escHtml(item.original || '')}
+                <div class="grammar-note">${escHtml(item.note || '')}</div>
+              </div>
+              <div class="grammar-example" style="border-left-color:var(--correct)">
+                <div style="font-size:11px;font-weight:600;color:var(--correct);margin-bottom:4px">✅ 修改建议</div>
+                ${escHtml(item.correction || '')}
+              </div>
+            </div>
+          </div>
+        </div>`;
+    });
+    document.getElementById('grammarList').innerHTML = gHtml;
+  }
+
+  // ── Feedback Tab ──
+  const fb = json.feedback || {};
+  const sts = fb.strengths || [];
+  const wks = fb.weaknesses || [];
+  const cf = fb.coherence_flow || '';
+  let fHtml = '';
+
+  if (sts.length > 0) {
+    fHtml += `<div class="feedback-card animate-in">
+      <h3>👍 优点与强项</h3>
+      <p class="feedback-sub">文章中做得好的方面，继续保持</p>
+      <div class="feedback-list">${sts.map(s => `
+        <div class="feedback-item positive">
+          <span class="feedback-icon">✅</span>
+          <div class="feedback-content">
+            <div class="feedback-title">${escHtml(s.title)}</div>
+            <div class="feedback-text">${escHtml(s.text)}</div>
+          </div>
+        </div>`).join('')}</div></div>`;
+  }
+
+  if (wks.length > 0) {
+    fHtml += `<div class="feedback-card animate-in delay-1">
+      <h3>👎 不足与改进方向</h3>
+      <p class="feedback-sub">需要重点关注的方面，以下是具体分析和修改建议</p>
+      <div class="feedback-list">${wks.map(w => `
+        <div class="feedback-item negative">
+          <span class="feedback-icon">🔴</span>
+          <div class="feedback-content">
+            <div class="feedback-title">${escHtml(w.title)}</div>
+            <div class="feedback-text">${escHtml(w.text)}</div>
+          </div>
+        </div>`).join('')}</div></div>`;
+  }
+
+  if (cf) {
+    fHtml += `<div class="feedback-card animate-in delay-2">
+      <h3>📐 文章结构分析</h3>
+      <p class="feedback-sub">你的作文逻辑推进路线图</p>
+      <div class="feedback-text" style="font-size:13px;color:var(--text-secondary);line-height:1.8">${escHtml(cf)}</div></div>`;
+  }
+
+  document.getElementById('feedbackContainer').innerHTML = fHtml;
+
+  // ── Action Suggestions Tab ──
+  const ns = json.next_steps || {};
+  const actions = [ns.action_1, ns.action_2, ns.action_3].filter(a => a);
+  if (actions.length > 0) {
+    document.getElementById('suggestionList').innerHTML = actions.map((a, i) => `
+      <div class="suggestion-card">
+        <div class="suggestion-num">#${i + 1}</div>
+        <div class="suggestion-text">${escHtml(a)}</div>
+      </div>`).join('');
+  } else {
+    document.getElementById('suggestionList').innerHTML = '<div style="font-size:13px;color:var(--text-tertiary);text-align:center;padding:20px">暂无建议</div>';
+  }
+
+  // ── Sentence Upgrades Tab ──
+  renderSentenceUpgrades(json.sentence_upgrades || []);
+
+  // ── Micro Tasks Tab ──
+  renderMicroTasks(json.micro_tasks || []);
+
+  // Show export button
+  document.getElementById('exportBtn').style.display = 'inline-flex';
+
+  // Switch to overview tab
+  switchTab(document.querySelector('.tab'), 'tab-overview');
+}
+
+function renderSidebar(stats, ej, promptText, overall) {
+  if (stats) {
+    document.getElementById('statWords').textContent = stats.wordCount;
+    document.getElementById('statSentences').textContent = stats.sentenceCount;
+    document.getElementById('statAvgLen').textContent = stats.avgSentenceLength;
+    document.getElementById('statUniqueWords').textContent = stats.uniqueWords;
+    document.getElementById('statTtr').textContent = stats.ttr;
+    injectStatExplanations(stats);
+  }
+
+  if (overall !== undefined && overall !== null) {
+    const intBand = Math.round(overall);
+    const colors = {9:'var(--band9)',8:'var(--band8)',7:'var(--band7)',6:'var(--band6)',5:'var(--band5)',4:'var(--band4)'};
+    const color = colors[intBand] || 'var(--text-primary)';
+    document.getElementById('overallBandValue').style.cssText = `color:${color};font-size:48px;font-weight:700`;
+    document.getElementById('overallBandValue').textContent = overall;
+  }
+
+  const dims = ['ta','cc','lr','gra'];
+  const barIds = ['taBar','ccBar','lrBar','graBar'];
+  const scoreIds = ['taScore','ccScore','lrScore','graScore'];
+  const bandColors = {9:'band-9',8:'band-8',7:'band-7',6:'band-6',5:'band-5',4:'band-4'};
+
+  dims.forEach((dim, i) => {
+    const d = ej[dim] || {};
+    const band = d.band || 0;
+    const intBand = Math.round(band);
+    const pct = Math.min((band / 9) * 100, 100);
+    const bar = document.getElementById(barIds[i]);
+    bar.className = 'band-bar-fill ' + (bandColors[intBand] || 'band-6');
+    bar.style.width = pct + '%';
+    document.getElementById(scoreIds[i]).textContent = band || '-';
+  });
+
+  // Issue tags (plain-language, student-friendly)
+  const issues = [];
+  const ejData = ej;
+  if (ejData.ta?.band < 6) {
+    if (ejData.ta.band <= 4.5) issues.push({text:'题目理解有偏差 — 建议重新审题并列出关键词', type:'weak'});
+    else issues.push({text:'论点展开不充分 — 每个观点都需要用例子支撑', type:'weak'});
+  }
+  if (ejData.cc?.band < 6) issues.push({text:'段落之间跳跃太大 — 试试用 however, therefore 等过渡词', type:'suggest'});
+  if (ejData.lr?.band < 6) issues.push({text:'同一个词用了太多次 — 建议多用同义词替换', type:'weak'});
+  else if (ejData.lr?.band < 7) issues.push({text:'词汇可以更丰富 — 适当减少重复用词', type:'suggest'});
+  if (ejData.gra?.band < 6) issues.push({text:'语法错误较多 — 建议重点练习主谓一致和时态', type:'weak'});
+  if (ejData.ta?.band >= 7) issues.push({text:'题目回应到位 — 立场明确、论证充分', type:'strong'});
+  if (ejData.cc?.band >= 7) issues.push({text:'逻辑流畅 — 观点推进自然，衔接得当', type:'strong'});
+  if (ejData.lr?.band >= 7) issues.push({text:'用词灵活地道 — 词汇选择精准多变', type:'strong'});
+  if (ejData.gra?.band >= 7) issues.push({text:'语法扎实 — 句式多样，错误很少', type:'strong'});
+
+  const issuesSection = document.getElementById('issuesSection');
+  const issueTags = document.getElementById('issueTags');
+  if (issues.length > 0) {
+    issuesSection.style.display = 'block';
+    issueTags.innerHTML = issues.map(i => `<span class="improve-tag ${i.type}">${i.text}</span>`).join('');
+  } else {
+    issuesSection.style.display = 'none';
+  }
+}
+
+function formatEssayParagraphs(text) {
+  if (!text) return '';
+  // Split by double newlines for paragraphs
+  const paras = text.split(/\n\n+/);
+  return paras.map(p => p.trim()).filter(p => p).map(p => `<p>${p}</p>`).join('');
+}
+
+function escHtml(str) {
+  if (!str) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ══════════════════════════════════════════════════════════════
+// SENTENCE UPGRADES RENDERING
+// ══════════════════════════════════════════════════════════════
+function renderSentenceUpgrades(upgrades) {
+  const container = document.getElementById('upgradeList');
+  if (!upgrades || upgrades.length === 0) {
+    container.innerHTML = '<div style="font-size:13px;color:var(--text-tertiary);text-align:center;padding:20px">暂未生成句子升级示范</div>';
+    return;
+  }
+  container.innerHTML = upgrades.map((u, i) => `
+    <div class="upgrade-card animate-in" style="animation-delay:${i * 0.08}s">
+      <div class="upgrade-original">${escHtml(u.original || '')}</div>
+      <div class="upgrade-arrow">⬇ 升级 ⬇</div>
+      <div class="upgrade-upgraded">${escHtml(u.upgraded || '')}</div>
+      <div class="upgrade-note">💡 ${escHtml(u.note || '改进了词汇和句式')}</div>
+    </div>
+  `).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+// MICRO TASKS RENDERING & INTERACTION
+// ══════════════════════════════════════════════════════════════
+let taskCompletionState = {};
+
+function renderMicroTasks(tasks) {
+  const container = document.getElementById('taskList');
+  const counterEl = document.getElementById('taskCompletionCounter');
+  taskCompletionState = {};
+
+  if (!tasks || tasks.length === 0) {
+    container.innerHTML = '<div style="font-size:13px;color:var(--text-tertiary);text-align:center;padding:20px">暂未生成巩固练习</div>';
+    counterEl.innerHTML = '';
+    document.getElementById('tabTaskBadge').style.display = 'none';
+    return;
+  }
+
+  tasks.forEach((_, i) => { taskCompletionState[i] = { done: false, userAnswer: '' }; });
+  updateTaskCounter();
+
+  container.innerHTML = tasks.map((t, i) => {
+    const skillLabel = skillName(t.skill || '');
+    return `
+      <div class="task-card animate-in" id="taskCard${i}" style="animation-delay:${i * 0.08}s">
+        <div class="task-skill-tag">${escHtml(skillLabel)}</div>
+        <div class="task-instruction">${escHtml(t.instruction || '')}</div>
+        <div class="task-context">${escHtml(t.context || '')}</div>
+        <textarea class="task-answer-input" id="taskAnswer${i}" placeholder="在此输入你的改写版本..." oninput="onTaskAnswerChange(${i})" rows="3"></textarea>
+        <div class="task-btn-row">
+          <button class="task-hint-toggle" onclick="toggleTaskHint(${i})">💡 查看参考</button>
+          <button class="task-reset-btn" onclick="resetTask(${i})">↻ 重置</button>
+          <button class="task-check-btn" id="taskCheckBtn${i}" onclick="markTaskComplete(${i})">✅ 标记完成</button>
+        </div>
+        <div class="task-hint" id="taskHint${i}"><strong>参考答案：</strong>${escHtml(t.target_text || '暂无参考')}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function skillName(skill) {
+  const map = { cc: '衔接与连贯', lr: '词汇替换', gra: '语法句式', ta: '任务回应' };
+  return map[skill] || skill;
+}
+
+function toggleTaskHint(index) {
+  const hint = document.getElementById('taskHint' + index);
+  if (hint) hint.classList.toggle('show');
+}
+
+function onTaskAnswerChange(index) {
+  if (taskCompletionState[index]) {
+    taskCompletionState[index].userAnswer = document.getElementById('taskAnswer' + index)?.value || '';
+  }
+}
+
+function resetTask(index) {
+  const state = taskCompletionState[index];
+  if (!state) return;
+  state.done = false;
+  state.userAnswer = '';
+  const card = document.getElementById('taskCard' + index);
+  if (card) card.classList.remove('completed');
+  const input = document.getElementById('taskAnswer' + index);
+  if (input) { input.disabled = false; input.value = ''; input.focus(); }
+  const btn = document.getElementById('taskCheckBtn' + index);
+  if (btn) { btn.textContent = '✅ 标记完成'; btn.classList.remove('done'); btn.onclick = () => markTaskComplete(index); }
+  const hint = document.getElementById('taskHint' + index);
+  if (hint) hint.classList.remove('show');
+  updateTaskCounter();
+}
+
+function markTaskComplete(index) {
+  const state = taskCompletionState[index];
+  if (!state || state.done) return;
+  const input = document.getElementById('taskAnswer' + index);
+  const answer = input?.value.trim();
+  if (!answer) {
+    if (input) { input.style.borderColor = 'var(--weak)'; setTimeout(() => { input.style.borderColor = ''; }, 2000); input.focus(); }
+    return;
+  }
+  state.done = true;
+  state.userAnswer = answer;
+  const card = document.getElementById('taskCard' + index);
+  if (card) card.classList.add('completed');
+  if (input) { input.disabled = true; }
+  const btn = document.getElementById('taskCheckBtn' + index);
+  if (btn) { btn.textContent = '✓ 已完成'; btn.classList.add('done'); btn.onclick = null; }
+  const hint = document.getElementById('taskHint' + index);
+  if (hint) hint.classList.add('show');
+  updateTaskCounter();
+}
+
+function updateTaskCounter() {
+  const totalTasks = Object.keys(taskCompletionState).length;
+  const doneCount = Object.values(taskCompletionState).filter(s => s.done).length;
+  const counterEl = document.getElementById('taskCompletionCounter');
+  const badge = document.getElementById('tabTaskBadge');
+
+  if (totalTasks > 0) {
+    counterEl.innerHTML = `
+      <div class="completion-counter">
+        <span>📊 完成进度：</span>
+        <span class="completion-counter-done">${doneCount}</span>
+        <span>/ ${totalTasks}</span>
+        ${doneCount === totalTasks ? '<span> 🎉 全部完成！</span>' : ''}
+      </div>`;
+    badge.style.display = 'inline';
+    badge.textContent = doneCount === totalTasks ? `✓${doneCount}/${totalTasks}` : `${doneCount}/${totalTasks}`;
+  } else {
+    counterEl.innerHTML = '';
+    badge.style.display = 'none';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// PLAIN-LANGUAGE STAT EXPLANATIONS
+// ══════════════════════════════════════════════════════════════
+function injectStatExplanations(stats) {
+  if (!stats) return;
+
+  const avgLenEl = document.getElementById('statAvgLenPlain');
+  if (avgLenEl && stats.avgSentenceLength !== undefined) {
+    const avg = stats.avgSentenceLength;
+    if (avg < 12) {
+      avgLenEl.textContent = '句子偏短，建议尝试写一些从句来丰富句式';
+      avgLenEl.className = 'stat-plain warn';
+    } else if (avg >= 15 && avg <= 25) {
+      avgLenEl.textContent = '句长适中，简单句和复杂句搭配得当';
+      avgLenEl.className = 'stat-plain good';
+    } else if (avg > 25) {
+      avgLenEl.textContent = '句子偏长，适当使用短句能增强节奏感';
+      avgLenEl.className = 'stat-plain neutral';
+    } else {
+      avgLenEl.textContent = '句长在合理范围内';
+      avgLenEl.className = 'stat-plain neutral';
+    }
+  }
+
+  const ttrEl = document.getElementById('statTtrPlain');
+  if (ttrEl && stats.ttr !== undefined) {
+    if (stats.ttr < 0.45) {
+      ttrEl.textContent = '词汇重复度偏高，建议多使用同义词替换旧词';
+      ttrEl.className = 'stat-plain warn';
+    } else if (stats.ttr >= 0.65) {
+      ttrEl.textContent = '词汇多样性很好，你使用了丰富的不同词汇';
+      ttrEl.className = 'stat-plain good';
+    } else {
+      ttrEl.textContent = '词汇多样性适中，还可以尝试更多不同的表达';
+      ttrEl.className = 'stat-plain neutral';
+    }
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// UI HELPERS
+// ══════════════════════════════════════════════════════════════
+function switchTab(el, tabId) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById(tabId).classList.add('active');
+}
+
+function toggleGrammar(el) {
+  el.classList.toggle('open');
+}
+
+function resetToEdit() {
+  document.getElementById('gradingView').classList.remove('active');
+  document.getElementById('inputPanel').classList.remove('hidden');
+  document.getElementById('exportBtn').style.display = 'none';
+  // Preserve input content - already there
+  window.scrollTo(0, 0);
+}
+
+function resetAll() {
+  document.getElementById('gradingView').classList.remove('active');
+  document.getElementById('inputPanel').classList.remove('hidden');
+  document.getElementById('exportBtn').style.display = 'none';
+  document.getElementById('fallbackArea').innerHTML = '';
+  document.getElementById('promptInput').value = '';
+  document.getElementById('essayInput').value = '';
+  document.getElementById('overallBandValue').textContent = '等待批改...';
+  document.getElementById('overallBandValue').style.cssText = 'color:var(--text-tertiary);font-size:20px;font-weight:400';
+  ['taBar','ccBar','lrBar','graBar'].forEach(id => {
+    const bar = document.getElementById(id);
+    bar.style.width = '0%';
+    bar.className = 'band-bar-fill';
+  });
+  ['taScore','ccScore','lrScore','graScore'].forEach(id => document.getElementById(id).textContent = '-');
+  document.getElementById('statWords').textContent = '-';
+  document.getElementById('statSentences').textContent = '-';
+  document.getElementById('statAvgLen').textContent = '-';
+  document.getElementById('statUniqueWords').textContent = '-';
+  document.getElementById('statTtr').textContent = '-';
+  document.getElementById('statAvgLenPlain').textContent = '';
+  document.getElementById('statAvgLenPlain').className = 'stat-plain';
+  document.getElementById('statTtrPlain').textContent = '';
+  document.getElementById('statTtrPlain').className = 'stat-plain';
+  document.getElementById('issuesSection').style.display = 'none';
+  document.getElementById('tabTaskBadge').style.display = 'none';
+  document.getElementById('wcWarning').classList.remove('show');
+  document.getElementById('wcOk').classList.remove('show');
+  window.scrollTo(0, 0);
+}
+
+// ══════════════════════════════════════════════════════════════
+// EXPORT: Markdown Download
+// ══════════════════════════════════════════════════════════════
+function downloadMarkdown() {
+  const json = gradingResult;
+  if (!json) { alert('暂无批改数据可导出'); return; }
+
+  const now = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  const dateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
+  const taskLabel = currentTaskType === 'task1' ? 'Task 1 (小作文)' : 'Task 2 (大作文)';
+  const taskLabelShort = currentTaskType === 'task1' ? 'Task 1' : 'Task 2';
+  const overall = json.overall !== undefined ? json.overall : '—';
+
+  // Helper: strip HTML tags from annotated essay and convert to plain text with annotations
+  function annotatedToMarkdown(html) {
+    if (!html) return '';
+    // Replace <br> with newlines
+    let text = html.replace(/<br\s*\/?>/gi, '\n');
+    // Replace span tags with markdown-style annotations (supports both single and double quoted attributes)
+    text = text.replace(/<span\s+class=(['"])([^'"]*)\1(?:\s+data-comment=(['"])([^'"]*?)\3)?(?:\s+data-suggest=(['"])([^'"]*?)\5)?\s*>([^<]*)<\/span>/g, (match, q1, cls, q2, comment, q3, suggest, content) => {
+      switch (cls) {
+        case 'ielts-good':    return `**${content}** ✅`;
+        case 'ielts-grammar': return `~~${content}~~ ⚠️${comment ? ' (' + comment + ' → ' + (suggest || '?') + ')' : ''}`;
+        case 'ielts-vocab':   return `~~${content}~~ 📝${comment ? ' (' + comment + ')' : ''}`;
+        case 'ielts-suggest': return `*${content}* 💡${comment ? ' (' + comment + ')' : ''}`;
+        default: return content;
+      }
+    });
+    // Remove any remaining HTML tags
+    text = text.replace(/<[^>]*>/g, '');
+    return text;
+  }
+
+  const annotatedMd = annotatedToMarkdown(json.annotated_essay || lastEssayText || '');
+
+  // Helper: safe YAML value
+  const safe = str => str || '';
+
+  // Build grammar issues markdown
+  let grammarMd = '';
+  const issues = json.grammar_issues_list || [];
+  if (issues.length > 0) {
+    issues.forEach((item, i) => {
+      grammarMd += `\n### ${i + 1}. ${safe(item.title)}\n\n`;
+      grammarMd += `- **原文**：${safe(item.original)}\n`;
+      grammarMd += `- **修改**：${safe(item.correction)}\n`;
+      grammarMd += `- **解析**：${safe(item.note)}\n\n`;
+    });
+  } else {
+    grammarMd = '\n⚠️ 本次分析暂未检测到显著语法问题\n\n';
+  }
+
+  // Build feedback
+  const fb = json.feedback || {};
+  const strengths = (fb.strengths || []).map(s => `- **${safe(s.title)}**：${safe(s.text)}`).join('\n') || '- 暂无';
+  const weaknesses = (fb.weaknesses || []).map(w => `- **${safe(w.title)}**：${safe(w.text)}`).join('\n') || '- 暂无';
+  const coherenceFlow = safe(fb.coherence_flow) || '- 暂无';
+
+  // Build action suggestions
+  const ns = json.next_steps || {};
+  const actions = [ns.action_1, ns.action_2, ns.action_3].filter(a => a);
+  const actionsMd = actions.length > 0
+    ? actions.map((a, i) => `${i + 1}. ${safe(a)}`).join('\n')
+    : '- 暂无建议';
+
+  // Build evaluation justification
+  const ej = json.evaluation_justification || {};
+  const dimLabels = {
+    ta: { name: '写作任务完成情况 (Task Achievement)', subtitle: 'TA' },
+    cc: { name: '连贯与衔接 (Coherence & Cohesion)', subtitle: 'CC' },
+    lr: { name: '词汇资源 (Lexical Resource)', subtitle: 'LR' },
+    gra: { name: '语法多样性与准确性 (Grammatical Range & Accuracy)', subtitle: 'GRA' }
+  };
+
+  let evalMd = '';
+  ['ta', 'cc', 'lr', 'gra'].forEach(dim => {
+    const d = ej[dim] || {};
+    const label = dimLabels[dim];
+    evalMd += `\n### ${label.name}：**${d.band || '—'}**\n\n`;
+    evalMd += `**推理分析**：\n${safe(d.analysis)}\n\n`;
+    evalMd += `**证据引用**：\n> ${safe(d.evidence)}\n\n`;
+  });
+
+  // Build raw JSON (pretty printed)
+  const rawJson = JSON.stringify(json, null, 2);
+
+  // ── Assemble full markdown ──
+  const markdown = `# IELTS 作文批改报告
+
+**批改时间**：${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}
+**任务类型**：${taskLabel}
+**总分**：**${overall}**
+
+---
+
+## 📝 作文题目
+
+> ${safe(lastPromptText)}
+
+---
+
+## ✍️ 原始作文
+
+${safe(lastEssayText)}
+
+---
+
+## 📊 基础统计数据
+
+| 指标 | 数值 |
+|------|------|
+| 总词数 | ${lastStats?.wordCount || '—'} |
+| 句子数 | ${lastStats?.sentenceCount || '—'} |
+| 平均句长 | ${lastStats?.avgSentenceLength || '—'} 词 |
+| 词形数 | ${lastStats?.uniqueWords || '—'} |
+| TTR (词汇类型比) | ${lastStats?.ttr || '—'} |
+
+---
+
+## 📈 评分总览
+
+### Overall Band Score：**${overall}**
+${evalMd}
+---
+
+## 🏷️ 作文批注（标注版）
+
+> ${annotatedMd.replace(/\n/g, '\n> ')}
+
+---
+
+## ⚠️ 语法错误分析
+${grammarMd}
+---
+
+## 💬 详细反馈
+
+### 👍 优点与强项
+
+${strengths}
+
+### 👎 不足与改进方向
+
+${weaknesses}
+
+### 📐 文章结构分析
+
+${coherenceFlow}
+
+---
+
+## 🎯 下一步行动建议
+
+${actionsMd}
+
+---
+
+## 📝 逐句升级示范
+
+${(() => {
+  const upgrades = json.sentence_upgrades || [];
+  if (upgrades.length === 0) return '- 暂无升级示范\n';
+  return upgrades.map((u, i) => `### ${i + 1}.\n- **原文**：${safe(u.original)}\n- **升级版**：${safe(u.upgraded)}\n- **说明**：${safe(u.note)}\n`).join('\n');
+})()}
+
+---
+
+## 🎯 巩固练习
+
+${(() => {
+  const tasks = json.micro_tasks || [];
+  if (tasks.length === 0) return '- 暂无巩固练习\n';
+  return tasks.map((t, i) => `### ${i + 1}. ${safe(t.title || '练习')}\n- **技能**：${safe(t.skill)}\n- **说明**：${safe(t.instruction)}\n- **原文**：${safe(t.context)}\n- **参考答案**：${safe(t.target_text)}\n`).join('\n');
+})()}
+
+---
+
+## 🔧 原始 API 返回 JSON（调试用）
+
+<details>
+<summary>点击展开查看完整 JSON</summary>
+
+\`\`\`json
+${rawJson}
+\`\`\`
+
+</details>
+`;
+
+  // Create blob and download
+  const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `IELTS_批改报告_${dateStr}.md`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ══════════════════════════════════════════════════════════════
+// SIDEBAR TOGGLE (Mobile)
+// ══════════════════════════════════════════════════════════════
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const backdrop = document.getElementById('sidebarBackdrop');
+  sidebar.classList.toggle('open');
+  backdrop.classList.toggle('open');
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarBackdrop').classList.remove('open');
+}
+
+// ══════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════
+// Auto-hide grading view initially
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('gradingView').classList.remove('active');
+  // Check if API key exists on load
+  if (!localStorage.getItem('deepseek_api_key')) {
+    setTimeout(showApiKeyModal, 500);
+  }
+});
+</script>
+
+</body>
+</html>
