@@ -19,6 +19,7 @@ python3 -m http.server 8080
 # 部署 — 推送到 main 分支即自动部署
 git push origin main
 # GitHub Pages: https://funkyericgou-max.github.io/ielts-essay-grader/
+# 仓库: https://github.com/funkyericgou-max/ielts-essay-grader
 ```
 
 没有构建工具、lint、测试套件。这是一个零依赖的单文件纯前端项目。

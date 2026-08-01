@@ -2,6 +2,9 @@
 
 AI 驱动的雅思备考工具，涵盖写作批改、口语评分和听力同义替换练习。基于 DeepSeek API + Groq Whisper，部署在 GitHub Pages。
 
+> 🔗 **在线地址**: [funkyericgou-max.github.io/ielts-essay-grader](https://funkyericgou-max.github.io/ielts-essay-grader/)
+> 📦 **仓库地址**: [github.com/funkyericgou-max/ielts-essay-grader](https://github.com/funkyericgou-max/ielts-essay-grader)
+
 ## 🚀 快速开始
 
 1. 打开 **[funkyericgou-max.github.io/ielts-essay-grader](https://funkyericgou-max.github.io/ielts-essay-grader/)**
