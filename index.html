@@ -1206,7 +1206,8 @@
         <div class="listening-target-card" id="lspTargetCard"></div>
         <div class="listening-feedback" id="lspFeedback" style="display:none"></div>
         <div class="listening-tile-grid" id="lspTileGrid"></div>
-        <div class="btn-row"><button class="btn btn-primary" id="lspSubmitBtn" onclick="submitListeningRound()">✅ 提交答案</button></div>
+        <div class="btn-row"><button class="btn btn-primary" id="lspSubmitBtn" onclick="submitListeningRound()">✅ 提交答案</button>
+        <button class="btn btn-accent" id="lspNextBtn" onclick="goNextListeningRound()" style="display:none">➡️ 下一题</button></div>
       </div>
       <div id="listeningGameResult" style="display:none"></div>
     </div>
@@ -3792,7 +3793,7 @@ function renderListeningGlossary() {
   const container = document.getElementById('listeningGlossaryList');
   let html = '';
   LISTENING_CATEGORIES.forEach(cat => {
-    html += '<div class="listening-cat-accordion open" id="lscat-' + cat.id + '">';
+    html += '<div class="listening-cat-accordion" id="lscat-' + cat.id + '">';
     html += '<div class="listening-cat-header" onclick="toggleListeningCat(this)">';
     html += '<span class="listening-cat-chevron">▶</span>';
     html += '<span>' + cat.name + '</span>';
@@ -3936,9 +3937,12 @@ function buildListeningRound() {
   document.getElementById('lspSubmitBtn').textContent = '✅ 提交答案';
 
   const targetCard = document.getElementById('lspTargetCard');
+  const isEnglishTarget = /^[a-zA-Z]/.test(targetWord);
+  const hintHtml = isEnglishTarget
+    ? ''
+    : '<div class="listening-target-hint">释义提示：' + escHtml(pair.cn) + '</div>';
   targetCard.innerHTML = '<div class="listening-target-label">🎯 找出与目标词同义的选项</div>' +
-    '<div class="listening-target-word">' + escHtml(targetWord) + '</div>' +
-    '<div class="listening-target-hint">释义提示：' + escHtml(pair.cn) + '</div>';
+    '<div class="listening-target-word">' + escHtml(targetWord) + '</div>' + hintHtml;
 
   const grid = document.getElementById('lspTileGrid');
   let tileHtml = '';
@@ -4016,7 +4020,7 @@ function submitListeningRound() {
     });
   }
 
-  // Feedback
+  // Feedback with missed items detail
   const fb = document.getElementById('lspFeedback');
   fb.style.display = '';
   if (roundWrong === 0 && roundMissed === 0) {
@@ -4024,19 +4028,36 @@ function submitListeningRound() {
     fb.textContent = '🎉 完美！全部正确！';
   } else {
     fb.className = 'listening-feedback has-errors';
-    fb.textContent = '正确 ' + roundCorrect + ' · 误选 ' + roundWrong + ' · 漏选 ' + roundMissed;
+    let fbText = '正确 ' + roundCorrect + ' · 误选 ' + roundWrong + ' · 漏选 ' + roundMissed;
+    // List missed correct items
+    const missedTexts = [];
+    tiles.forEach((t, i) => {
+      if (t.isCorrect && !selected.has(i)) missedTexts.push(t.text);
+    });
+    if (missedTexts.length > 0) {
+      fbText += '\n漏选: ' + missedTexts.join('、');
+    }
+    fb.textContent = fbText;
   }
+
+  // Show next button, hide submit
   document.getElementById('lspSubmitBtn').style.display = 'none';
+  document.getElementById('lspNextBtn').style.display = '';
 
   updateListeningSidebar();
   listeningGame._current = null;
-
-  // Next round or finish
   listeningGame.round++;
+  // No auto-advance — user clicks 下一题
+}
+
+function goNextListeningRound() {
+  document.getElementById('lspFeedback').style.display = 'none';
+  document.getElementById('lspNextBtn').style.display = 'none';
+  document.getElementById('lspSubmitBtn').style.display = '';
   if (listeningGame.round >= listeningGame.pairs.length) {
-    setTimeout(finishListeningGame, 800);
+    finishListeningGame();
   } else {
-    setTimeout(() => { document.getElementById('lspFeedback').style.display = 'none'; buildListeningRound(); }, 1200);
+    buildListeningRound();
   }
 }
 
