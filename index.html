@@ -713,7 +713,6 @@
     <button class="sidebar-toggle" id="speakingSidebarToggle" onclick="toggleSpeakingSidebar()" title="侧边栏" style="display:none">☰</button>
     <button class="sidebar-toggle" id="listeningSidebarToggle" onclick="toggleListeningSidebar()" title="侧边栏" style="display:none">☰</button>
     <a onclick="showApiKeyModal()">⚙ 设置</a>
-    <a onclick="resetAll()" id="btnNewGrade">✏ 新批改</a>
   </nav>
   <div class="topbar-user">
     <div class="topbar-avatar" onclick="showApiKeyModal()" title="设置 API Key">S</div>
@@ -1499,7 +1498,6 @@ function enterMode(mode) {
     initListening();
   }
   document.getElementById('btnBackHome').style.display = '';
-  document.getElementById('btnNewGrade').style.display = 'none';
   window.scrollTo(0, 0);
 }
 
@@ -1511,7 +1509,6 @@ function goHome() {
   document.getElementById('listeningWorkspace').classList.remove('active');
   document.getElementById('topbarTitle').textContent = 'IELTS AI Grader';
   document.getElementById('btnBackHome').style.display = 'none';
-  document.getElementById('btnNewGrade').style.display = '';
   document.getElementById('listeningSidebarToggle').style.display = 'none';
   // Stop any playing audio
   stopPlayback();
