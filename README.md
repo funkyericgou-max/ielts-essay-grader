@@ -33,7 +33,7 @@ AI 驱动的雅思备考工具，涵盖写作批改、口语评分和听力同�
 
 纯前端单文件部署，零后端依赖：
 
-- **HTML + CSS + JavaScript**（单文件，约 4600 行）
+- **HTML + CSS + JavaScript**（单文件，约 4300 行）
 - **DeepSeek Chat API**（`deepseek-chat` 模型）
 - **GitHub Pages** 托管
 - API Key 通过 `localStorage` 本地存储
