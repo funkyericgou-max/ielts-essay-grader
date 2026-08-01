@@ -1,14 +1,13 @@
-# IELTS Essay Grader — 雅思作文智能批阅系统
+# IELTS AI Grader — 雅思智能评分与练习工具
 
-AI 驱动的雅思写作评分工具，基于 DeepSeek API 实时评分，严格对齐剑桥官方 Band Descriptors。
+AI 驱动的雅思备考工具，涵盖写作批改、口语评分和听力同义替换练习。基于 DeepSeek API + Groq Whisper，部署在 GitHub Pages。
 
 ## 🚀 快速开始
 
 1. 打开 **[funkyericgou-max.github.io/ielts-essay-grader](https://funkyericgou-max.github.io/ielts-essay-grader/)**
-2. 点击右上角 **⚙ 设置**，填入你的 [DeepSeek API Key](https://platform.deepseek.com/api_keys)
-3. 选择 Task 1（小作文）或 Task 2（大作文）
-4. 粘贴题目和作文 → 点击 **开始批改**
-5. 查看 4 维度评分 + 逐句批注 + 升级示范 + 巩固练习
+2. 选择模式：✏️ Writing 写作批改 / 🎙️ Speaking 口语批改 / 👂 Listening 听力同义替换
+3. Writing/Speaking：点击右上角 **⚙ 设置**，填入对应的 API Key
+4. Listening：无需任何 Key，即开即玩
 
 > 🔐 API Key 仅存储在浏览器本地，不会上传到任何服务器。
 
@@ -22,14 +21,16 @@ AI 驱动的雅思写作评分工具，基于 DeepSeek API 实时评分，严格
 | **语法分析** | 可展开的错误分类卡片，每条含原文→修改建议 |
 | **逐句升级示范** | AI 挑选最具升级潜力的原句，展示"差在哪、怎么改" |
 | **巩固练习** | 根据最短板自动生成改写练习，动手写才能进步 |
-| **导出报告** | 一键下载完整 Markdown 批改报告 |
+| **口语评分** | 录音 → STT 转写 → FC/LR/GRA/P 四维度 AI 评分 + 流利度图表 |
+| **听力练习** | 115 组高频同义替换游戏化练习，8 大场景，错误追踪 |
+| **导出报告** | 一键下载完整 Markdown 批改/练习报告 |
 | **Few-Shot 锚定** | 内嵌官方考官判定的标准样文，AI 评分偏离度 ≤ ±0.5 |
 
 ## 🛠️ 技术栈
 
 纯前端单文件部署，零后端依赖：
 
-- **HTML + CSS + JavaScript**（单文件，约 1900 行）
+- **HTML + CSS + JavaScript**（单文件，约 4600 行）
 - **DeepSeek Chat API**（`deepseek-chat` 模型）
 - **GitHub Pages** 托管
 - API Key 通过 `localStorage` 本地存储
@@ -40,32 +41,36 @@ AI 驱动的雅思写作评分工具，基于 DeepSeek API 实时评分，严格
 ├── README.md               ← 项目入口说明
 ├── index.html              ← 主应用（单文件）
 ├── .gitignore
-├── document/               ← 设计文档（架构、评分体系、Prompt Engineering）
+├── DOCS/               ← 设计文档（架构、评分体系、Prompt Engineering）
 │   ├── README.md           ← 文档总纲
-│   ├── 01-scoring-system.md
-│   ├── 02-ui-design.md
-│   ├── 03-technical-architecture.md
-│   ├── 04-prompt-engineering.md
-│   ├── 05-development-steps.md
-│   ├── 06-deployment.md
-│   ├── 07-limitations.md
-│   └── 08-future-roadmap.md
+│   ├── 评分体系与量化对齐设计.md
+│   ├── UI与交互设计.md
+│   ├── 技术架构.md
+│   ├── Prompt工程与设计.md
+│   ├── 开发与构建步骤.md
+│   ├── 部署说明.md
+│   ├── 已知局限与风险.md
+│   ├── 未来优化方向.md
+│   ├── 口语功能整体设计.md
+│   └── 听力同义替换设计.md
 └── examples/               ← 示例批改报告
     └── IELTS_批改报告_2026-07-20.md
 ```
 
 ## 📖 设计文档
 
-完整的设计文档在 [`document/`](document/) 目录下，建议按以下顺序阅读：
+完整的设计文档在 [`DOCS/`](DOCS/) 目录下，建议按以下顺序阅读：
 
-1. [评分体系与量化对齐设计](document/01-scoring-system.md)
-2. [UI 与交互设计](document/02-ui-design.md)
-3. [技术架构](document/03-technical-architecture.md)
-4. [核心 Prompt Engineering 设计](document/04-prompt-engineering.md)
-5. [详细开发与构建步骤](document/05-development-steps.md)
-6. [GitHub Pages 部署](document/06-deployment.md)
-7. [已知局限与风险](document/07-limitations.md)
-8. [未来可能的优化方向](document/08-future-roadmap.md)
+1. [评分体系与量化对齐设计](DOCS/评分体系与量化对齐设计.md)
+2. [UI 与交互设计](DOCS/UI与交互设计.md)
+3. [技术架构](DOCS/技术架构.md)
+4. [核心 Prompt Engineering 设计](DOCS/Prompt工程与设计.md)
+5. [详细开发与构建步骤](DOCS/开发与构建步骤.md)
+6. [GitHub Pages 部署](DOCS/部署说明.md)
+7. [已知局限与风险](DOCS/已知局限与风险.md)
+8. [未来可能的优化方向](DOCS/未来优化方向.md)
+9. [口语功能整体设计](DOCS/口语功能整体设计.md)
+10. [听力同义替换设计](DOCS/听力同义替换设计.md)
 
 ## ⚠️ 免责声明
 
