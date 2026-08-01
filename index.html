@@ -1487,9 +1487,7 @@ function enterMode(mode) {
     document.getElementById('sidebarToggleBtn').style.display = 'none';
     document.getElementById('speakingSidebarToggle').style.display = '';
     document.getElementById('listeningSidebarToggle').style.display = 'none';
-    if (!localStorage.getItem('groq_api_key')) {
-      setTimeout(showApiKeyModal, 500);
-    }
+    // Groq key check happens at submit time — no auto-prompt on entry
   } else if (mode === 'listening') {
     document.getElementById('writingWorkspace').classList.remove('active');
     document.getElementById('speakingWorkspace').classList.remove('active');
@@ -4273,10 +4271,8 @@ document.addEventListener('DOMContentLoaded', () => {
   drawIdleWaveform();
   // init listening glossary in background
   initListening();
-  // Check if API key exists
-  if (!localStorage.getItem('deepseek_api_key')) {
-    setTimeout(showApiKeyModal, 500);
-  }
+  // No auto-prompt — users can open settings manually if they have keys
+  // Key checks happen at submit time when actually needed
 });
 </script>
 
