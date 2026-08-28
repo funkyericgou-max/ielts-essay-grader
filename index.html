@@ -685,13 +685,16 @@
   .vocab-flashcard.flipped{transform:rotateY(180deg)}
   .vocab-flashcard-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:var(--radius-lg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;background:var(--surface);border:2px solid var(--border);box-shadow:var(--shadow-sm)}
   .vocab-flashcard-back{transform:rotateY(180deg);background:var(--surface-2)}
-  .vocab-flashcard-word{font-family:var(--font-mono);font-size:36px;font-weight:700;color:var(--text-primary);margin-bottom:8px;text-align:center}
-  .vocab-flashcard-pos{font-size:14px;color:var(--text-tertiary);margin-bottom:16px}
-  .vocab-flashcard-flip-hint{font-size:12px;color:var(--text-tertiary);margin-top:20px}
-  .vocab-flashcard-zh{font-size:26px;font-weight:700;color:var(--accent);margin-bottom:16px;text-align:center}
-  .vocab-flashcard-en{font-size:14px;color:var(--text-primary);line-height:1.7;margin-bottom:8px;text-align:center}
-  .vocab-flashcard-cn{font-size:13px;color:var(--text-secondary);line-height:1.7;margin-bottom:12px;text-align:center}
+  .vocab-flashcard-word{font-family:var(--font-mono);font-size:36px;font-weight:700;color:var(--text-primary);margin-bottom:4px;text-align:center}
+  .vocab-flashcard-ph{font-size:18px;color:var(--text-secondary);margin-bottom:6px;letter-spacing:.5px}
+  .vocab-flashcard-pos{font-size:14px;color:var(--text-tertiary);margin-bottom:10px}
+  .vocab-flashcard-backword{font-family:var(--font-mono);font-size:22px;font-weight:700;color:var(--text-primary);margin-bottom:10px;text-align:center}
+  .vocab-flashcard-flip-hint{font-size:12px;color:var(--text-tertiary);margin-top:14px}
+  .vocab-flashcard-zh{font-size:26px;font-weight:700;color:var(--accent);margin-bottom:10px;text-align:center}
+  .vocab-flashcard-en{font-size:14px;color:var(--text-primary);line-height:1.7;margin-bottom:6px;text-align:center;max-width:420px}
+  .vocab-flashcard-cn{font-size:13px;color:var(--text-secondary);line-height:1.7;margin-bottom:12px;text-align:center;max-width:420px}
   .vocab-flashcard-syn{font-size:12px;color:var(--text-tertiary);font-style:italic}
+  .vocab-key-hint{font-size:12px;color:var(--text-tertiary);text-align:center;margin:-12px 0 16px;letter-spacing:.3px}
 
   .vocab-flashcard-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:24px}
   .vocab-btn{display:inline-flex;align-items:center;gap:6px;padding:12px 28px;border-radius:var(--radius);font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;border:none}
@@ -1358,12 +1361,15 @@
           <div class="vocab-flashcard" id="vocabFlashcard" onclick="flipVocabCard()">
             <div class="vocab-flashcard-face vocab-flashcard-front">
               <div class="vocab-flashcard-word" id="vocabCardWord">-</div>
+              <div class="vocab-flashcard-ph" id="vocabCardPh"></div>
               <div class="vocab-flashcard-pos" id="vocabCardPos"></div>
-              <div class="vocab-flashcard-flip-hint">👆 点击翻面看释义</div>
+              <div class="vocab-flashcard-en" id="vocabCardEn"></div>
+              <div class="vocab-flashcard-flip-hint">👆 点击 / 空格 翻面看释义与翻译</div>
             </div>
             <div class="vocab-flashcard-face vocab-flashcard-back">
+              <div class="vocab-flashcard-backword" id="vocabCardBackWord"></div>
               <div class="vocab-flashcard-zh" id="vocabCardZh"></div>
-              <div class="vocab-flashcard-en" id="vocabCardEn"></div>
+              <div class="vocab-flashcard-en" id="vocabCardBackEn"></div>
               <div class="vocab-flashcard-cn" id="vocabCardCn"></div>
               <div class="vocab-flashcard-syn" id="vocabCardSyn"></div>
             </div>
@@ -1378,6 +1384,7 @@
           <button class="vocab-nav-btn" onclick="nextVocabCard()">下一张 →</button>
           <button class="vocab-nav-btn" onclick="shuffleVocabCard()">🔀 随机</button>
         </div>
+        <div class="vocab-key-hint">⌨️ ←不认识 &nbsp;→认识 &nbsp;↑上一张 &nbsp;↓下一张 &nbsp;空格翻面</div>
         <div class="sidebar-heading" style="margin:24px 0 12px">📖 词汇总览</div>
         <div id="vocabGlossaryList"></div>
       </div>
@@ -1403,12 +1410,15 @@
             <div class="vocab-flashcard" id="vocabReviewCard" onclick="flipVocabReviewCard()">
               <div class="vocab-flashcard-face vocab-flashcard-front">
                 <div class="vocab-flashcard-word" id="vocabReviewWord">-</div>
+                <div class="vocab-flashcard-ph" id="vocabReviewPh"></div>
                 <div class="vocab-flashcard-pos" id="vocabReviewPos"></div>
-                <div class="vocab-flashcard-flip-hint">👆 点击翻面</div>
+                <div class="vocab-flashcard-en" id="vocabReviewEn"></div>
+                <div class="vocab-flashcard-flip-hint">👆 点击 / 空格 翻面看释义与翻译</div>
               </div>
               <div class="vocab-flashcard-face vocab-flashcard-back">
+                <div class="vocab-flashcard-backword" id="vocabReviewBackWord"></div>
                 <div class="vocab-flashcard-zh" id="vocabReviewZh"></div>
-                <div class="vocab-flashcard-en" id="vocabReviewEn"></div>
+                <div class="vocab-flashcard-en" id="vocabReviewBackEn"></div>
                 <div class="vocab-flashcard-cn" id="vocabReviewCn"></div>
                 <div class="vocab-flashcard-syn" id="vocabReviewSyn"></div>
               </div>
@@ -1419,6 +1429,7 @@
             <button class="vocab-btn fuzzy" onclick="rateVocabReview('fuzzy')">😐 模糊</button>
             <button class="vocab-btn known" onclick="rateVocabReview('known')">🙂 认识</button>
           </div>
+          <div class="vocab-key-hint">⌨️ ←不认识 &nbsp;→认识 &nbsp;空格翻面</div>
         </div>
         <div id="vocabReviewDone" style="display:none"></div>
       </div>
@@ -1428,10 +1439,11 @@
 </div><!-- /#vocabularyWorkspace -->
 
 <script src="vocabulary-data.js"></script>
+<script src="phonetics-data.js"></script>
 <script>
 // ══════════════════════════════════════════════════════════════
 // CONFIG & STATE
-const APP_VERSION = '2.4.0'; // + Vocabulary 背单词模块 (1000 词, 闪卡 + 间隔重复)
+const APP_VERSION = '2.5.0'; // + 背单词闪卡改版: 音标/例句上正面, 去分类, 键盘快捷键, 不认识自动翻面
 // ══════════════════════════════════════════════════════════════
 let currentTaskType = 'task2'; // 'task1' or 'task2'
 let gradingResult = null;
@@ -4623,8 +4635,21 @@ function resetVocabBrowse() {
 
 function applyVocabFilter() {
   const q = document.getElementById('vocabSearchInput').value.trim().toLowerCase();
+  const prog = vocabIdentity ? getVocabIdentityProgress() : {};
   let list = VOCAB_ALL_WORDS;
   if (vocabActiveCat !== 'all') list = list.filter(w => w.catId === vocabActiveCat);
+  if (!q) {
+    // 未搜索时按间隔重复调度筛选浏览卡：
+    //   等级0（新词/不认识）→ 显示；等级1-4 → 到期(next<=now)才回来；等级5(满级) → 毕业不再出现
+    const now = Date.now();
+    list = list.filter(w => {
+      const s = prog[w.w];
+      if (!s) return true;
+      if (s.level >= 5) return false;
+      if (s.level === 0) return true;
+      return s.next && s.next <= now;
+    });
+  }
   if (q) list = list.filter(w => w.w.toLowerCase().includes(q) || w.zh.includes(q));
   vocabBrowseList = list;
   vocabBrowseIndex = 0;
@@ -4634,19 +4659,26 @@ function applyVocabFilter() {
 
 function renderVocabCard() {
   if (!vocabBrowseList.length) {
-    document.getElementById('vocabCardWord').textContent = '无匹配单词';
+    const q = (document.getElementById('vocabSearchInput').value || '').trim();
+    document.getElementById('vocabCardWord').textContent = q ? '无匹配单词' : '🎉 当前列表已全部认识！';
+    document.getElementById('vocabCardPh').textContent = '';
     document.getElementById('vocabCardPos').textContent = '';
-    document.getElementById('vocabCardZh').textContent = '';
     document.getElementById('vocabCardEn').textContent = '';
+    document.getElementById('vocabCardBackWord').textContent = '';
+    document.getElementById('vocabCardZh').textContent = '';
+    document.getElementById('vocabCardBackEn').textContent = '';
     document.getElementById('vocabCardCn').textContent = '';
     document.getElementById('vocabCardSyn').textContent = '';
     return;
   }
   const w = vocabBrowseList[vocabBrowseIndex];
   document.getElementById('vocabCardWord').textContent = w.w;
-  document.getElementById('vocabCardPos').textContent = w.pos + ' · ' + w.catName;
-  document.getElementById('vocabCardZh').textContent = w.zh;
+  document.getElementById('vocabCardPh').textContent = VOCAB_PHONETICS[w.w] || '';
+  document.getElementById('vocabCardPos').textContent = w.pos;
   document.getElementById('vocabCardEn').textContent = w.en;
+  document.getElementById('vocabCardBackWord').textContent = w.w;
+  document.getElementById('vocabCardZh').textContent = w.zh;
+  document.getElementById('vocabCardBackEn').textContent = w.en;
   document.getElementById('vocabCardCn').textContent = w.cn;
   document.getElementById('vocabCardSyn').textContent = w.syn ? '近义词：' + w.syn : '';
   document.getElementById('vocabFlashcard').classList.remove('flipped');
@@ -4677,9 +4709,27 @@ function shuffleVocabCard() {
 
 function rateVocabCard(rating) {
   if (!vocabBrowseList.length || !vocabIdentity) return;
-  applyVocabRating(vocabBrowseList[vocabBrowseIndex].w, rating);
+  const w = vocabBrowseList[vocabBrowseIndex];
+  applyVocabRating(w.w, rating);
   updateVocabSidebar();
-  nextVocabCard();
+  if (rating === 'unknown') {
+    // 不认识：自动翻到背面看答案（词义/例句/翻译），不跳下一张
+    document.getElementById('vocabFlashcard').classList.add('flipped');
+    return;
+  }
+  // 认识：移出当前浏览队列，避免“学会的词”反复循环出现
+  vocabBrowseList.splice(vocabBrowseIndex, 1);
+  if (!vocabBrowseList.length) {
+    document.getElementById('vocabCardWord').textContent = '🎉 当前列表已全部学完';
+    ['vocabCardPh', 'vocabCardPos', 'vocabCardEn', 'vocabCardBackWord', 'vocabCardZh', 'vocabCardBackEn', 'vocabCardCn', 'vocabCardSyn'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = '';
+    });
+    document.getElementById('vocabFlashcard').classList.remove('flipped');
+    return;
+  }
+  if (vocabBrowseIndex >= vocabBrowseList.length) vocabBrowseIndex = vocabBrowseList.length - 1;
+  renderVocabCard();
 }
 
 // ─── 词汇总览 (手风琴列表) ───
@@ -4727,8 +4777,8 @@ function collectDueWords() {
     const s = prog[w.w];
     if (!s || (s.level === 0 && !s.next)) {
       fresh.push(w);
-    } else if (s.next && s.next <= now) {
-      due.push(w);
+    } else if (s.level < 5 && s.next && s.next <= now) {
+      due.push(w); // 等级1-4 到期才复习；等级5(满级) 毕业，不再进入复习队列
     }
   });
   due.sort((a, b) => (prog[a.w].next - prog[b.w].next));
@@ -4756,9 +4806,12 @@ function startVocabReview() {
 function renderVocabReviewCard() {
   const w = vocabReview.queue[vocabReview.index];
   document.getElementById('vocabReviewWord').textContent = w.w;
-  document.getElementById('vocabReviewPos').textContent = w.pos + ' · ' + w.catName;
-  document.getElementById('vocabReviewZh').textContent = w.zh;
+  document.getElementById('vocabReviewPh').textContent = VOCAB_PHONETICS[w.w] || '';
+  document.getElementById('vocabReviewPos').textContent = w.pos;
   document.getElementById('vocabReviewEn').textContent = w.en;
+  document.getElementById('vocabReviewBackWord').textContent = w.w;
+  document.getElementById('vocabReviewZh').textContent = w.zh;
+  document.getElementById('vocabReviewBackEn').textContent = w.en;
   document.getElementById('vocabReviewCn').textContent = w.cn;
   document.getElementById('vocabReviewSyn').textContent = w.syn ? '近义词：' + w.syn : '';
   document.getElementById('vocabReviewCard').classList.remove('flipped');
@@ -4857,6 +4910,35 @@ function closeVocabularySidebar() {
   document.getElementById('vocabularySidebar').classList.remove('open');
   document.getElementById('vocabularySidebarBackdrop').classList.remove('show');
 }
+
+// ─── 键盘快捷键（背单词工作区激活时生效） ───
+// ← 不认识 · → 认识 · 空格 翻面 · ↑ 上一张 · ↓ 下一张（↑↓ 仅浏览 Tab）
+
+function vocabKeydown(e) {
+  const ws = document.getElementById('vocabularyWorkspace');
+  if (!ws.classList.contains('active')) return;
+  const t = e.target;
+  if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+  const browseActive = document.getElementById('vocab-browse').classList.contains('active');
+  const reviewActive = document.getElementById('vocab-review').classList.contains('active');
+  if (!browseActive && !reviewActive) return;
+  const key = e.key;
+  if (key === ' ') {
+    e.preventDefault();
+    if (browseActive) flipVocabCard(); else flipVocabReviewCard();
+  } else if (key === 'ArrowLeft') {
+    e.preventDefault();
+    if (browseActive) rateVocabCard('unknown'); else rateVocabReview('unknown');
+  } else if (key === 'ArrowRight') {
+    e.preventDefault();
+    if (browseActive) rateVocabCard('known'); else rateVocabReview('known');
+  } else if (key === 'ArrowUp') {
+    if (browseActive) { e.preventDefault(); prevVocabCard(); }
+  } else if (key === 'ArrowDown') {
+    if (browseActive) { e.preventDefault(); nextVocabCard(); }
+  }
+}
+document.addEventListener('keydown', vocabKeydown);
 
 // ══════════════════════════════════════════════════════════════
 // INIT

@@ -10,6 +10,8 @@ IELTS AI Grader — AI 驱动的雅思写作 + 口语 + 听力 + 背单词四模
 
 **v4 已包含**：背单词模块——1000 个 G类核心词（`vocabulary-data.js`），闪卡浏览 + 间隔重复，双身份（Eric / Sophia）进度独立，零 API 调用。
 
+**v4.1 已包含**：闪卡改版——正面显示 `音标 + 词性 + 英文例句`（音标查 `phonetics-data.js`，美式 IPA），去分类；「不认识」自动翻面看答案；浏览卡遵循间隔重复调度（等级 1-4 按 1/2/4/7 天到期回到浏览卡，等级 5 满级毕业）；键盘快捷键 `←` 不认识 `→` 认识 `空格` 翻面 `↑/↓` 上/下一张。
+
 ## Commands
 
 ```bash
@@ -24,7 +26,7 @@ git push origin main
 # 仓库: https://github.com/funkyericgou-max/ielts-essay-grader
 ```
 
-没有构建工具、lint、测试套件。零依赖纯前端项目：1 个逻辑文件（`index.html`）+ 1 个数据文件（`vocabulary-data.js`），其余数据（听力同义词对）仍以 JS 常量内联在 `index.html` 内。
+没有构建工具、lint、测试套件。零依赖纯前端项目：1 个逻辑文件（`index.html`）+ 2 个数据文件（`vocabulary-data.js`、`phonetics-data.js`），其余数据（听力同义词对）仍以 JS 常量内联在 `index.html` 内。
 
 ## Architecture
 
@@ -117,8 +119,8 @@ git push origin main
 | 听力工作区 | `#listeningWorkspace` | 大纲展示 + 游戏模式，纯客户端，零 API |
 | 同义词数据 | `LISTENING_CATEGORIES` / `LISTENING_TRAP_GROUPS` | 115 组同义词对嵌入为 JS 常量 |
 | 游戏引擎 | `startListeningGame()` → `submitListeningRound()` | 10 轮随机匹配，tile 点选，正确/误选/漏选着色 |
-| 背单词工作区 | `#vocabularyWorkspace` | 身份选择 + 单词卡 + 间隔重复双 Tab，纯客户端，零 API |
-| 词汇数据 | `vocabulary-data.js` | `VOCAB_CATEGORIES` / `VOCAB_ALL_WORDS`，1000 个 G类核心词（10 分类 × 100） |
+| 背单词工作区 | `#vocabularyWorkspace` | 身份选择 + 单词卡 + 间隔重复双 Tab，键盘快捷键（←/→/空格/↑/↓），纯客户端，零 API |
+| 词汇数据 | `vocabulary-data.js` + `phonetics-data.js` | `VOCAB_CATEGORIES` / `VOCAB_ALL_WORDS`（1000 词，10 分类 × 100）+ `VOCAB_PHONETICS`（美式音标） |
 | 身份与进度 | `vocab_progress` (localStorage) | 按身份隔离 `{ eric, sophia }`，每词 `{ level: 0..5, next }` |
 | 间隔重复引擎 | `applyVocabRating()` → `startVocabReview()` | 三档评分调度，到期词优先 + 每日新词 20 个 |
 
