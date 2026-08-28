@@ -685,7 +685,11 @@
   .vocab-flashcard.flipped{transform:rotateY(180deg)}
   .vocab-flashcard-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:var(--radius-lg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;background:var(--surface);border:2px solid var(--border);box-shadow:var(--shadow-sm)}
   .vocab-flashcard-back{transform:rotateY(180deg);background:var(--surface-2)}
-  .vocab-flashcard-word{font-family:var(--font-mono);font-size:36px;font-weight:700;color:var(--text-primary);margin-bottom:4px;text-align:center}
+  .vocab-flashcard-word{font-family:var(--font-mono);font-size:36px;font-weight:700;color:var(--text-primary);text-align:center}
+  .vocab-word-row{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:4px}
+  .vocab-word-row .vocab-flashcard-word{margin-bottom:0}
+  .vocab-speak-btn{background:transparent;border:none;font-size:22px;cursor:pointer;color:var(--accent);padding:4px;line-height:1;border-radius:50%;transition:transform .15s,color .15s}
+  .vocab-speak-btn:hover{transform:scale(1.25);color:#234732}
   .vocab-flashcard-ph{font-size:18px;color:var(--text-secondary);margin-bottom:6px;letter-spacing:.5px}
   .vocab-flashcard-pos{font-size:14px;color:var(--text-tertiary);margin-bottom:10px}
   .vocab-flashcard-backword{font-family:var(--font-mono);font-size:22px;font-weight:700;color:var(--text-primary);margin-bottom:10px;text-align:center}
@@ -1320,6 +1324,9 @@
         <div class="vocab-stat-row"><span class="vocab-stat-label">今日待复习</span><span class="vocab-stat-value" id="vspDue">0</span></div>
         <div class="vocab-stat-row"><span class="vocab-stat-label">总进度</span><span class="vocab-stat-value" id="vspTotal">0%</span></div>
       </div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-secondary);margin-top:12px;cursor:pointer">
+        <input type="checkbox" id="vocabAutoSpeak" onchange="toggleVocabAutoSpeak()"> 🔊 自动朗读单词
+      </label>
     </div>
     <div class="sidebar-section animate-in delay-2">
       <div class="sidebar-heading">📂 分类掌握度</div>
@@ -1363,7 +1370,10 @@
         <div class="vocab-flashcard-wrap">
           <div class="vocab-flashcard" id="vocabFlashcard" onclick="flipVocabCard()">
             <div class="vocab-flashcard-face vocab-flashcard-front">
-              <div class="vocab-flashcard-word" id="vocabCardWord">-</div>
+              <div class="vocab-word-row">
+                <div class="vocab-flashcard-word" id="vocabCardWord">-</div>
+                <button class="vocab-speak-btn" onclick="event.stopPropagation();speakBrowseWord()" title="朗读发音">🔊</button>
+              </div>
               <div class="vocab-flashcard-ph" id="vocabCardPh"></div>
               <div class="vocab-flashcard-pos" id="vocabCardPos"></div>
               <div class="vocab-flashcard-en" id="vocabCardEn"></div>
@@ -1412,7 +1422,10 @@
           <div class="vocab-flashcard-wrap">
             <div class="vocab-flashcard" id="vocabReviewCard" onclick="flipVocabReviewCard()">
               <div class="vocab-flashcard-face vocab-flashcard-front">
-                <div class="vocab-flashcard-word" id="vocabReviewWord">-</div>
+                <div class="vocab-word-row">
+                  <div class="vocab-flashcard-word" id="vocabReviewWord">-</div>
+                  <button class="vocab-speak-btn" onclick="event.stopPropagation();speakReviewWord()" title="朗读发音">🔊</button>
+                </div>
                 <div class="vocab-flashcard-ph" id="vocabReviewPh"></div>
                 <div class="vocab-flashcard-pos" id="vocabReviewPos"></div>
                 <div class="vocab-flashcard-en" id="vocabReviewEn"></div>
@@ -1458,7 +1471,7 @@
 <script>
 // ══════════════════════════════════════════════════════════════
 // CONFIG & STATE
-const APP_VERSION = '2.6.1'; // + 分享文本加入日期标记（📅 年月日·星期）
+const APP_VERSION = '2.7.0'; // + 单词朗读：🔊 发音按钮 + 自动朗读开关（浏览器内置 TTS，零下载）
 // ══════════════════════════════════════════════════════════════
 let currentTaskType = 'task2'; // 'task1' or 'task2'
 let gradingResult = null;
@@ -4606,6 +4619,8 @@ function enterVocabMain() {
   document.getElementById('vocabIdentityScreen').style.display = 'none';
   document.getElementById('vocabMain').style.display = '';
   document.getElementById('vocabSidebarIdentity').textContent = vocabIdentity === 'eric' ? '👤 Eric' : '👤 Sophia';
+  const as = document.getElementById('vocabAutoSpeak');
+  if (as) as.checked = getVocabAutoSpeak();
   resetVocabBrowse();
   resetVocabReview();
   updateVocabSidebar();
@@ -4697,6 +4712,7 @@ function renderVocabCard() {
   document.getElementById('vocabCardCn').textContent = w.cn;
   document.getElementById('vocabCardSyn').textContent = w.syn ? '近义词：' + w.syn : '';
   document.getElementById('vocabFlashcard').classList.remove('flipped');
+  if (getVocabAutoSpeak()) speakVocabWord(w.w); // 自动朗读：新词出现即读
 }
 
 function flipVocabCard() {
@@ -4830,6 +4846,7 @@ function renderVocabReviewCard() {
   document.getElementById('vocabReviewCn').textContent = w.cn;
   document.getElementById('vocabReviewSyn').textContent = w.syn ? '近义词：' + w.syn : '';
   document.getElementById('vocabReviewCard').classList.remove('flipped');
+  if (getVocabAutoSpeak()) speakVocabWord(w.w); // 自动朗读：复习词出现即读
   document.getElementById('vocabReviewCount').textContent = '第 ' + (vocabReview.index + 1) + ' / ' + vocabReview.queue.length + ' 个';
   const s = getVocabIdentityProgress()[w.w];
   const label = (!s || (s.level === 0 && !s.next)) ? '🆕 新词' : '🔁 复习 · 等级 ' + s.level;
@@ -5056,6 +5073,34 @@ function closeVocabShare() {
   document.getElementById('vocabShareModal').classList.remove('active');
   document.getElementById('vocabShareCopyBtn').textContent = '📋 复制文本';
   vocabSharePending = null; // 未复制就关闭：不更新快照，下次仍从上次实际分享算起
+}
+
+// ─── 单词朗读（浏览器内置 TTS，零下载） ───
+
+function speakVocabWord(word) {
+  if (!word) return;
+  if (!('speechSynthesis' in window)) return; // 浏览器不支持则静默忽略
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(word);
+  u.lang = 'en-US';
+  u.rate = 0.85;
+  window.speechSynthesis.speak(u);
+}
+function speakBrowseWord() {
+  if (vocabBrowseList.length && vocabBrowseIndex < vocabBrowseList.length) {
+    speakVocabWord(vocabBrowseList[vocabBrowseIndex].w);
+  }
+}
+function speakReviewWord() {
+  if (vocabReview && vocabReview.index < vocabReview.queue.length) {
+    speakVocabWord(vocabReview.queue[vocabReview.index].w);
+  }
+}
+function getVocabAutoSpeak() {
+  return localStorage.getItem('vocab_autospeak') === '1';
+}
+function toggleVocabAutoSpeak() {
+  localStorage.setItem('vocab_autospeak', document.getElementById('vocabAutoSpeak').checked ? '1' : '0');
 }
 
 // ══════════════════════════════════════════════════════════════
