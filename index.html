@@ -1458,7 +1458,7 @@
 <script>
 // ══════════════════════════════════════════════════════════════
 // CONFIG & STATE
-const APP_VERSION = '2.6.0'; // + 背单词分享进展（侧边栏 → 生成文字总结 → 一键复制）
+const APP_VERSION = '2.6.1'; // + 分享文本加入日期标记（📅 年月日·星期）
 // ══════════════════════════════════════════════════════════════
 let currentTaskType = 'task2'; // 'task1' or 'task2'
 let gradingResult = null;
@@ -4983,6 +4983,10 @@ function fmtShareElapsed(ms) {
   const d = Math.floor(h / 24);
   return d + ' 天' + (h % 24 ? ' ' + (h % 24) + ' 小时' : '');
 }
+function fmtShareDate(d) {
+  const week = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+  return d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日 · ' + week[d.getDay()];
+}
 
 function openVocabShare() {
   if (!vocabIdentity) { alert('请先选择学习身份'); return; }
@@ -4992,10 +4996,12 @@ function openVocabShare() {
   const now = Date.now();
   const pct = Math.round(stats.mastered / stats.total * 100);
   let text;
+  const dateLine = '📅 ' + fmtShareDate(new Date()) + '\n';
   if (prev) {
     const dLearned = stats.learned - prev.learned;
     const dMastered = stats.mastered - prev.mastered;
     text = '📚 IELTS 背单词进展 · ' + name + '\n' +
+      dateLine +
       '⏱ 距上次分享：' + fmtShareElapsed(now - prev.time) + '\n' +
       '🆕 新增学习：' + (dLearned > 0 ? '+' : '') + dLearned + ' 词\n' +
       '✅ 新增掌握：' + (dMastered > 0 ? '+' : '') + dMastered + ' 词\n' +
@@ -5005,6 +5011,7 @@ function openVocabShare() {
       '🗓 今日待复习：' + stats.due + ' 词';
   } else {
     text = '📚 IELTS 背单词进展 · ' + name + '\n' +
+      dateLine +
       '🎉 首次分享！\n' +
       '📈 累计学习：' + stats.learned + ' 词\n' +
       '🎯 已掌握：' + stats.mastered + ' 词（' + pct + '%）\n' +
