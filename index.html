@@ -492,7 +492,7 @@
   .home-logo{font-size:56px;margin-bottom:8px}
   .home-title{font-family:var(--font-display);font-size:36px;font-weight:700;margin-bottom:8px;letter-spacing:-.02em}
   .home-subtitle{font-size:15px;color:var(--text-tertiary);margin-bottom:48px;max-width:500px;line-height:1.7}
-  .home-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;max-width:1100px;width:100%}
+  .home-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:24px;max-width:1400px;width:100%}
   @media(max-width:768px){.home-cards{grid-template-columns:1fr;gap:24px}.home-title{font-size:28px}}
   .home-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:36px 28px;cursor:pointer;transition:all .25s ease;box-shadow:var(--shadow-sm);text-align:left;position:relative}
   .home-card:hover{transform:translateY(-6px);box-shadow:var(--shadow-lg);border-color:var(--accent-mid)}
@@ -571,6 +571,10 @@
   /* ─── Listening Home Card ─── */
   .home-card-btn.listening{background:rgba(41,128,185,.1);color:#2980b9;border:1px solid rgba(41,128,185,.3)}
   .home-card-btn.listening:hover{background:rgba(41,128,185,.18);box-shadow:var(--shadow-md)}
+
+  /* ─── Vocabulary Home Card ─── */
+  .home-card-btn.vocab{background:rgba(142,68,173,.1);color:#8e44ad;border:1px solid rgba(142,68,173,.3)}
+  .home-card-btn.vocab:hover{background:rgba(142,68,173,.18);box-shadow:var(--shadow-md)}
 
   /* ─── Listening Module ─── */
   .listening-search{width:100%;padding:12px 16px;border:1.5px solid var(--border);border-radius:var(--radius);font-family:var(--font-body);font-size:14px;background:var(--surface);color:var(--text-primary);margin-bottom:20px;outline:none;transition:border-color .15s}
@@ -655,6 +659,75 @@
   .listening-mastery-label{display:flex;justify-content:space-between;font-size:11px;color:var(--text-secondary);margin-bottom:4px}
   .listening-mastery-label span:last-child{font-weight:600;color:var(--text-primary)}
 
+  /* ─── Vocabulary Module ─── */
+  .vocab-identity-screen{text-align:center;padding:40px 24px;max-width:640px;margin:0 auto}
+  .vocab-identity-screen h3{font-family:var(--font-display);font-size:26px;margin-bottom:8px}
+  .vocab-identity-screen p{font-size:14px;color:var(--text-secondary);line-height:1.7;margin-bottom:28px}
+  .vocab-identity-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  @media(max-width:500px){.vocab-identity-grid{grid-template-columns:1fr}}
+  .vocab-identity-card{background:var(--surface);border:2px solid var(--border);border-radius:var(--radius-lg);padding:32px 20px;cursor:pointer;transition:all .2s ease;text-align:center}
+  .vocab-identity-card:hover{transform:translateY(-4px);border-color:var(--accent-mid);box-shadow:var(--shadow-md)}
+  .vocab-identity-avatar{font-size:48px;margin-bottom:12px;display:block}
+  .vocab-identity-name{font-family:var(--font-display);font-size:20px;font-weight:700;margin-bottom:6px}
+  .vocab-identity-progress{font-size:12px;color:var(--text-tertiary)}
+
+  .vocab-search{width:100%;padding:12px 16px;border:1.5px solid var(--border);border-radius:var(--radius);font-family:var(--font-body);font-size:14px;background:var(--surface);color:var(--text-primary);margin-bottom:16px;outline:none;transition:border-color .15s}
+  .vocab-search:focus{border-color:var(--accent-mid)}
+  .vocab-search::placeholder{color:var(--text-tertiary)}
+
+  .vocab-cat-filter{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+  .vocab-cat-chip{padding:6px 14px;border-radius:16px;border:1px solid var(--border);background:var(--surface-2);color:var(--text-secondary);font-size:12px;font-weight:500;cursor:pointer;transition:all .12s}
+  .vocab-cat-chip:hover{border-color:var(--accent-mid)}
+  .vocab-cat-chip.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+  .vocab-flashcard-wrap{perspective:1200px;max-width:520px;margin:0 auto 24px;min-height:300px}
+  .vocab-flashcard{position:relative;width:100%;min-height:300px;transform-style:preserve-3d;transition:transform .5s ease;cursor:pointer}
+  .vocab-flashcard.flipped{transform:rotateY(180deg)}
+  .vocab-flashcard-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:var(--radius-lg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;background:var(--surface);border:2px solid var(--border);box-shadow:var(--shadow-sm)}
+  .vocab-flashcard-back{transform:rotateY(180deg);background:var(--surface-2)}
+  .vocab-flashcard-word{font-family:var(--font-mono);font-size:36px;font-weight:700;color:var(--text-primary);margin-bottom:8px;text-align:center}
+  .vocab-flashcard-pos{font-size:14px;color:var(--text-tertiary);margin-bottom:16px}
+  .vocab-flashcard-flip-hint{font-size:12px;color:var(--text-tertiary);margin-top:20px}
+  .vocab-flashcard-zh{font-size:26px;font-weight:700;color:var(--accent);margin-bottom:16px;text-align:center}
+  .vocab-flashcard-en{font-size:14px;color:var(--text-primary);line-height:1.7;margin-bottom:8px;text-align:center}
+  .vocab-flashcard-cn{font-size:13px;color:var(--text-secondary);line-height:1.7;margin-bottom:12px;text-align:center}
+  .vocab-flashcard-syn{font-size:12px;color:var(--text-tertiary);font-style:italic}
+
+  .vocab-flashcard-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:24px}
+  .vocab-btn{display:inline-flex;align-items:center;gap:6px;padding:12px 28px;border-radius:var(--radius);font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;border:none}
+  .vocab-btn.unknown{background:var(--surface-2);color:var(--text-primary);border:1.5px solid var(--border)}
+  .vocab-btn.unknown:hover{background:var(--border)}
+  .vocab-btn.fuzzy{background:rgba(241,196,15,.12);color:#b7950b;border:1.5px solid rgba(241,196,15,.4)}
+  .vocab-btn.fuzzy:hover{background:rgba(241,196,15,.22)}
+  .vocab-btn.known{background:var(--accent);color:#fff}
+  .vocab-btn.known:hover{background:#234732}
+
+  .vocab-nav-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:28px}
+  .vocab-nav-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:var(--radius);font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface-2);color:var(--text-secondary);transition:all .15s}
+  .vocab-nav-btn:hover{background:var(--border);color:var(--text-primary)}
+
+  .vocab-review-header{text-align:center;padding:20px 24px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:20px}
+  .vocab-review-count{font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--accent);margin-bottom:4px}
+  .vocab-review-sub{font-size:13px;color:var(--text-secondary)}
+
+  .vocab-progress{height:6px;background:var(--surface-2);border-radius:3px;margin-bottom:20px;overflow:hidden}
+  .vocab-progress-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .3s ease}
+
+  .vocab-stats{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+  .vocab-stat-row{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--surface-2);border-radius:var(--radius)}
+  .vocab-stat-label{font-size:12px;color:var(--text-secondary);font-weight:500}
+  .vocab-stat-value{font-size:15px;font-weight:700;font-family:var(--font-mono);color:var(--text-primary)}
+  .vocab-mastery-bar{margin-bottom:8px}
+  .vocab-mastery-label{display:flex;justify-content:space-between;font-size:11px;color:var(--text-secondary);margin-bottom:4px}
+  .vocab-mastery-label span:last-child{font-weight:600;color:var(--text-primary)}
+  .vocab-mastery-bar .band-bar-fill{background:var(--accent)}
+
+  .vocab-word-row{display:grid;grid-template-columns:1.2fr auto 1fr;gap:12px;align-items:center;padding:8px 18px 8px 36px;border-top:1px solid var(--border);font-size:13px}
+  .vocab-word-row:nth-child(even){background:var(--surface-2)}
+  .vocab-word-w{font-weight:600;color:var(--text-primary);font-family:var(--font-mono)}
+  .vocab-word-pos{color:var(--text-tertiary);font-size:11px}
+  .vocab-word-zh{color:var(--text-secondary);text-align:right}
+
 </style>
 </head>
 <body>
@@ -670,6 +743,7 @@
     <button class="sidebar-toggle" id="sidebarToggleBtn" onclick="toggleSidebar()" title="侧边栏">☰</button>
     <button class="sidebar-toggle" id="speakingSidebarToggle" onclick="toggleSpeakingSidebar()" title="侧边栏" style="display:none">☰</button>
     <button class="sidebar-toggle" id="listeningSidebarToggle" onclick="toggleListeningSidebar()" title="侧边栏" style="display:none">☰</button>
+    <button class="sidebar-toggle" id="vocabularySidebarToggle" onclick="toggleVocabularySidebar()" title="侧边栏" style="display:none">☰</button>
     <a onclick="showApiKeyModal()">⚙ 设置</a>
   </nav>
   <div class="topbar-user">
@@ -715,6 +789,17 @@
         <span class="home-card-feat">陷阱词参考</span>
       </div>
       <button class="home-card-btn listening">开始练习 →</button>
+    </div>
+    <div class="home-card" onclick="enterMode('vocabulary')">
+      <span class="home-card-icon">📚</span>
+      <div class="home-card-name">Vocabulary · 背单词</div>
+      <div class="home-card-desc">1000 个 G类雅思核心词，闪卡浏览 + 间隔重复记忆，无需 AI，即开即学。</div>
+      <div class="home-card-features">
+        <span class="home-card-feat">1000 核心词</span>
+        <span class="home-card-feat">G类场景</span>
+        <span class="home-card-feat">闪卡 + 间隔重复</span>
+      </div>
+      <button class="home-card-btn vocab">开始背单词 →</button>
     </div>
   </div>
 </div>
@@ -1214,10 +1299,139 @@
 </div>
 </div><!-- /#listeningWorkspace -->
 
+<!-- ═══ Vocabulary Workspace ═══ -->
+<div class="workspace" id="vocabularyWorkspace">
+<div class="sidebar-backdrop" id="vocabularySidebarBackdrop" onclick="closeVocabularySidebar()"></div>
+<div class="app">
+  <aside class="sidebar" id="vocabularySidebar">
+    <div class="sidebar-section animate-in">
+      <div class="sidebar-heading">👤 当前身份</div>
+      <div id="vocabSidebarIdentity" style="font-size:14px;font-weight:700;color:var(--accent);margin-bottom:8px">-</div>
+      <button class="btn btn-secondary" onclick="showVocabIdentityScreen()" style="width:100%;font-size:12px">🔄 切换身份</button>
+    </div>
+    <div class="sidebar-section animate-in delay-1">
+      <div class="sidebar-heading">📊 学习进度</div>
+      <div class="vocab-stats">
+        <div class="vocab-stat-row"><span class="vocab-stat-label">已掌握</span><span class="vocab-stat-value" id="vspMastered">0</span></div>
+        <div class="vocab-stat-row"><span class="vocab-stat-label">学习中</span><span class="vocab-stat-value" id="vspLearning">0</span></div>
+        <div class="vocab-stat-row"><span class="vocab-stat-label">今日待复习</span><span class="vocab-stat-value" id="vspDue">0</span></div>
+        <div class="vocab-stat-row"><span class="vocab-stat-label">总进度</span><span class="vocab-stat-value" id="vspTotal">0%</span></div>
+      </div>
+    </div>
+    <div class="sidebar-section animate-in delay-2">
+      <div class="sidebar-heading">📂 分类掌握度</div>
+      <div class="band-overview" id="vspCategoryMastery"></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <!-- 身份选择屏 -->
+    <div id="vocabIdentityScreen" class="vocab-identity-screen" style="display:none">
+      <h3>📚 选择学习身份</h3>
+      <p>每个身份的学习进度独立保存。选择身份后开始背单词。</p>
+      <div class="vocab-identity-grid">
+        <div class="vocab-identity-card" onclick="selectVocabIdentity('eric')">
+          <span class="vocab-identity-avatar">👤</span>
+          <div class="vocab-identity-name">Eric</div>
+          <div class="vocab-identity-progress" id="vocabIdEric">已掌握 0 词</div>
+        </div>
+        <div class="vocab-identity-card" onclick="selectVocabIdentity('sophia')">
+          <span class="vocab-identity-avatar">👤</span>
+          <div class="vocab-identity-name">Sophia</div>
+          <div class="vocab-identity-progress" id="vocabIdSophia">已掌握 0 词</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 主界面 -->
+    <div id="vocabMain" style="display:none">
+      <div class="tabs">
+        <div class="tab active" onclick="switchVocabTab(this,'vocab-browse')">📇 单词卡</div>
+        <div class="tab" onclick="switchVocabTab(this,'vocab-review')">🔁 间隔重复</div>
+      </div>
+
+      <!-- Tab1 单词卡 -->
+      <div class="tab-content active" id="vocab-browse">
+        <input class="vocab-search" id="vocabSearchInput" placeholder="🔍 搜索单词（中文 / 英文）…" oninput="applyVocabFilter()">
+        <div class="vocab-cat-filter" id="vocabCatFilter"></div>
+        <div class="vocab-flashcard-wrap">
+          <div class="vocab-flashcard" id="vocabFlashcard" onclick="flipVocabCard()">
+            <div class="vocab-flashcard-face vocab-flashcard-front">
+              <div class="vocab-flashcard-word" id="vocabCardWord">-</div>
+              <div class="vocab-flashcard-pos" id="vocabCardPos"></div>
+              <div class="vocab-flashcard-flip-hint">👆 点击翻面看释义</div>
+            </div>
+            <div class="vocab-flashcard-face vocab-flashcard-back">
+              <div class="vocab-flashcard-zh" id="vocabCardZh"></div>
+              <div class="vocab-flashcard-en" id="vocabCardEn"></div>
+              <div class="vocab-flashcard-cn" id="vocabCardCn"></div>
+              <div class="vocab-flashcard-syn" id="vocabCardSyn"></div>
+            </div>
+          </div>
+        </div>
+        <div class="vocab-flashcard-actions">
+          <button class="vocab-btn unknown" onclick="rateVocabCard('unknown')">😕 不认识</button>
+          <button class="vocab-btn known" onclick="rateVocabCard('known')">🙂 认识</button>
+        </div>
+        <div class="vocab-nav-row">
+          <button class="vocab-nav-btn" onclick="prevVocabCard()">← 上一张</button>
+          <button class="vocab-nav-btn" onclick="nextVocabCard()">下一张 →</button>
+          <button class="vocab-nav-btn" onclick="shuffleVocabCard()">🔀 随机</button>
+        </div>
+        <div class="sidebar-heading" style="margin:24px 0 12px">📖 词汇总览</div>
+        <div id="vocabGlossaryList"></div>
+      </div>
+
+      <!-- Tab2 间隔重复 -->
+      <div class="tab-content" id="vocab-review">
+        <div id="vocabReviewEmpty">
+          <div class="vocab-review-header">
+            <div class="vocab-review-count">🔁 间隔重复</div>
+            <div class="vocab-review-sub">系统会优先复习到期词汇，并补充新词（每日 20 个）</div>
+          </div>
+          <div style="text-align:center;padding:20px">
+            <button class="btn btn-primary" onclick="startVocabReview()" style="font-size:15px;padding:12px 40px">🚀 开始复习</button>
+          </div>
+        </div>
+        <div id="vocabReviewBoard" style="display:none">
+          <div class="vocab-progress"><div class="vocab-progress-fill" id="vspProgressFill" style="width:0%"></div></div>
+          <div class="vocab-review-header">
+            <div class="vocab-review-count" id="vocabReviewCount">第 1 / 20 个</div>
+            <div class="vocab-review-sub" id="vocabReviewSub"></div>
+          </div>
+          <div class="vocab-flashcard-wrap">
+            <div class="vocab-flashcard" id="vocabReviewCard" onclick="flipVocabReviewCard()">
+              <div class="vocab-flashcard-face vocab-flashcard-front">
+                <div class="vocab-flashcard-word" id="vocabReviewWord">-</div>
+                <div class="vocab-flashcard-pos" id="vocabReviewPos"></div>
+                <div class="vocab-flashcard-flip-hint">👆 点击翻面</div>
+              </div>
+              <div class="vocab-flashcard-face vocab-flashcard-back">
+                <div class="vocab-flashcard-zh" id="vocabReviewZh"></div>
+                <div class="vocab-flashcard-en" id="vocabReviewEn"></div>
+                <div class="vocab-flashcard-cn" id="vocabReviewCn"></div>
+                <div class="vocab-flashcard-syn" id="vocabReviewSyn"></div>
+              </div>
+            </div>
+          </div>
+          <div class="vocab-flashcard-actions">
+            <button class="vocab-btn unknown" onclick="rateVocabReview('unknown')">😕 不认识</button>
+            <button class="vocab-btn fuzzy" onclick="rateVocabReview('fuzzy')">😐 模糊</button>
+            <button class="vocab-btn known" onclick="rateVocabReview('known')">🙂 认识</button>
+          </div>
+        </div>
+        <div id="vocabReviewDone" style="display:none"></div>
+      </div>
+    </div>
+  </main>
+</div>
+</div><!-- /#vocabularyWorkspace -->
+
+<script src="vocabulary-data.js"></script>
 <script>
 // ══════════════════════════════════════════════════════════════
 // CONFIG & STATE
-const APP_VERSION = '2.3.0'; // Few-Shot Anchoring + Hard Constraints + Task1 Full Descriptors
+const APP_VERSION = '2.4.0'; // + Vocabulary 背单词模块 (1000 词, 闪卡 + 间隔重复)
 // ══════════════════════════════════════════════════════════════
 let currentTaskType = 'task2'; // 'task1' or 'task2'
 let gradingResult = null;
@@ -1238,7 +1452,7 @@ let tipInterval = null;
 // ══════════════════════════════════════════════════════════════
 // APP MODE & SPEAKING STATE
 // ══════════════════════════════════════════════════════════════
-let appMode = 'home'; // 'home' | 'writing' | 'speaking'
+let appMode = 'home'; // 'home' | 'writing' | 'speaking' | 'listening' | 'vocabulary'
 
 // Speaking globals
 let speakingResult = null;
@@ -1474,28 +1688,45 @@ function enterMode(mode) {
     document.getElementById('writingWorkspace').classList.add('active');
     document.getElementById('speakingWorkspace').classList.remove('active');
     document.getElementById('listeningWorkspace').classList.remove('active');
+    document.getElementById('vocabularyWorkspace').classList.remove('active');
     document.getElementById('topbarTitle').textContent = 'IELTS Essay Grader';
     document.getElementById('sidebarToggleBtn').style.display = '';
     document.getElementById('speakingSidebarToggle').style.display = 'none';
     document.getElementById('listeningSidebarToggle').style.display = 'none';
+    document.getElementById('vocabularySidebarToggle').style.display = 'none';
   } else if (mode === 'speaking') {
     document.getElementById('writingWorkspace').classList.remove('active');
     document.getElementById('speakingWorkspace').classList.add('active');
     document.getElementById('listeningWorkspace').classList.remove('active');
+    document.getElementById('vocabularyWorkspace').classList.remove('active');
     document.getElementById('topbarTitle').textContent = 'IELTS Speaking Grader';
     document.getElementById('sidebarToggleBtn').style.display = 'none';
     document.getElementById('speakingSidebarToggle').style.display = '';
     document.getElementById('listeningSidebarToggle').style.display = 'none';
+    document.getElementById('vocabularySidebarToggle').style.display = 'none';
     // Groq key check happens at submit time — no auto-prompt on entry
   } else if (mode === 'listening') {
     document.getElementById('writingWorkspace').classList.remove('active');
     document.getElementById('speakingWorkspace').classList.remove('active');
     document.getElementById('listeningWorkspace').classList.add('active');
+    document.getElementById('vocabularyWorkspace').classList.remove('active');
     document.getElementById('topbarTitle').textContent = 'IELTS Listening Trainer';
     document.getElementById('sidebarToggleBtn').style.display = 'none';
     document.getElementById('speakingSidebarToggle').style.display = 'none';
     document.getElementById('listeningSidebarToggle').style.display = '';
+    document.getElementById('vocabularySidebarToggle').style.display = 'none';
     initListening();
+  } else if (mode === 'vocabulary') {
+    document.getElementById('writingWorkspace').classList.remove('active');
+    document.getElementById('speakingWorkspace').classList.remove('active');
+    document.getElementById('listeningWorkspace').classList.remove('active');
+    document.getElementById('vocabularyWorkspace').classList.add('active');
+    document.getElementById('topbarTitle').textContent = 'IELTS Vocabulary Trainer';
+    document.getElementById('sidebarToggleBtn').style.display = 'none';
+    document.getElementById('speakingSidebarToggle').style.display = 'none';
+    document.getElementById('listeningSidebarToggle').style.display = 'none';
+    document.getElementById('vocabularySidebarToggle').style.display = '';
+    initVocabulary();
   }
   document.getElementById('btnBackHome').style.display = '';
   window.scrollTo(0, 0);
@@ -1507,9 +1738,11 @@ function goHome() {
   document.getElementById('writingWorkspace').classList.remove('active');
   document.getElementById('speakingWorkspace').classList.remove('active');
   document.getElementById('listeningWorkspace').classList.remove('active');
+  document.getElementById('vocabularyWorkspace').classList.remove('active');
   document.getElementById('topbarTitle').textContent = 'IELTS AI Grader';
   document.getElementById('btnBackHome').style.display = 'none';
   document.getElementById('listeningSidebarToggle').style.display = 'none';
+  document.getElementById('vocabularySidebarToggle').style.display = 'none';
   // Stop any playing audio
   stopPlayback();
   if (speakingAudioUrl) { URL.revokeObjectURL(speakingAudioUrl); speakingAudioUrl = null; }
@@ -4256,6 +4489,376 @@ function exportListeningResult() {
 }
 
 // ══════════════════════════════════════════════════════════════
+// VOCABULARY MODULE — 背单词 (纯客户端，零 API；闪卡 + 间隔重复)
+// ══════════════════════════════════════════════════════════════
+
+const VOCAB_DAILY_NEW = 20;
+const VOCAB_INTERVALS = { 1: 86400000, 2: 172800000, 3: 345600000, 4: 604800000, 5: 1296000000 }; // 1d/2d/4d/7d/15d
+
+let vocabIdentity = null;   // 'eric' | 'sophia'
+let vocabActiveCat = 'all'; // 当前分类筛选
+let vocabBrowseList = [];   // 当前筛选后的浏览列表
+let vocabBrowseIndex = 0;
+let vocabReview = null;     // { queue, index }
+
+// ─── 进度存储 (按身份隔离) ───
+
+function getVocabProgress() {
+  try { return JSON.parse(localStorage.getItem('vocab_progress')) || {}; }
+  catch (e) { return {}; }
+}
+function saveVocabProgress(p) {
+  localStorage.setItem('vocab_progress', JSON.stringify(p));
+}
+function getVocabIdentityProgress() {
+  if (!vocabIdentity) return {};
+  const p = getVocabProgress();
+  return p[vocabIdentity] || {};
+}
+function setVocabWordState(word, state) {
+  const p = getVocabProgress();
+  if (!p[vocabIdentity]) p[vocabIdentity] = {};
+  p[vocabIdentity][word] = state;
+  saveVocabProgress(p);
+}
+
+// ─── 评分核心 (三档 → 调度) ───
+
+function applyVocabRating(word, rating) {
+  if (!vocabIdentity) return;
+  const cur = getVocabIdentityProgress()[word] || { level: 0, next: 0 };
+  const now = Date.now();
+  let level = cur.level;
+  if (rating === 'unknown') {
+    level = 0;
+    setVocabWordState(word, { level: 0, next: now + 10 * 60 * 1000 }); // 10 分钟后重新排队
+  } else if (rating === 'fuzzy') {
+    level = Math.max(level, 1);
+    setVocabWordState(word, { level: level, next: now + VOCAB_INTERVALS[1] }); // 1 天
+  } else if (rating === 'known') {
+    level = Math.min(level + 1, 5);
+    setVocabWordState(word, { level: level, next: now + (VOCAB_INTERVALS[level] || VOCAB_INTERVALS[5]) });
+  }
+}
+
+// ─── 入口 / 身份选择 ───
+
+function initVocabulary() {
+  updateVocabIdentityCards();
+  if (vocabIdentity) {
+    enterVocabMain();
+  } else {
+    showVocabIdentityScreen();
+  }
+}
+
+function showVocabIdentityScreen() {
+  vocabIdentity = null;
+  document.getElementById('vocabIdentityScreen').style.display = '';
+  document.getElementById('vocabMain').style.display = 'none';
+  updateVocabIdentityCards();
+  updateVocabSidebar();
+}
+
+function updateVocabIdentityCards() {
+  const p = getVocabProgress();
+  ['eric', 'sophia'].forEach(id => {
+    const words = p[id] || {};
+    const mastered = Object.values(words).filter(s => s && s.level >= 3).length;
+    const el = document.getElementById('vocabId' + (id === 'eric' ? 'Eric' : 'Sophia'));
+    if (el) el.textContent = '已掌握 ' + mastered + ' 词';
+  });
+}
+
+function selectVocabIdentity(id) {
+  vocabIdentity = id;
+  enterVocabMain();
+}
+
+function enterVocabMain() {
+  document.getElementById('vocabIdentityScreen').style.display = 'none';
+  document.getElementById('vocabMain').style.display = '';
+  document.getElementById('vocabSidebarIdentity').textContent = vocabIdentity === 'eric' ? '👤 Eric' : '👤 Sophia';
+  resetVocabBrowse();
+  resetVocabReview();
+  updateVocabSidebar();
+}
+
+// ─── Tab 切换 ───
+
+function switchVocabTab(el, tabId) {
+  const scope = el.closest('#vocabularyWorkspace');
+  scope.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  scope.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  updateVocabSidebar();
+}
+
+// ─── 闪卡浏览 Tab ───
+
+function buildVocabCatFilter() {
+  const container = document.getElementById('vocabCatFilter');
+  let html = '<span class="vocab-cat-chip' + (vocabActiveCat === 'all' ? ' active' : '') + '" onclick="setVocabCat(\'all\')">全部</span>';
+  VOCAB_CATEGORIES.forEach(cat => {
+    html += '<span class="vocab-cat-chip' + (vocabActiveCat === cat.id ? ' active' : '') + '" onclick="setVocabCat(\'' + cat.id + '\')">' + cat.name + '</span>';
+  });
+  container.innerHTML = html;
+}
+
+function setVocabCat(id) {
+  vocabActiveCat = id;
+  buildVocabCatFilter();
+  applyVocabFilter();
+}
+
+function resetVocabBrowse() {
+  vocabActiveCat = 'all';
+  vocabBrowseList = [];
+  vocabBrowseIndex = 0;
+  document.getElementById('vocabSearchInput').value = '';
+  buildVocabCatFilter();
+  applyVocabFilter();
+}
+
+function applyVocabFilter() {
+  const q = document.getElementById('vocabSearchInput').value.trim().toLowerCase();
+  let list = VOCAB_ALL_WORDS;
+  if (vocabActiveCat !== 'all') list = list.filter(w => w.catId === vocabActiveCat);
+  if (q) list = list.filter(w => w.w.toLowerCase().includes(q) || w.zh.includes(q));
+  vocabBrowseList = list;
+  vocabBrowseIndex = 0;
+  renderVocabGlossary();
+  renderVocabCard();
+}
+
+function renderVocabCard() {
+  if (!vocabBrowseList.length) {
+    document.getElementById('vocabCardWord').textContent = '无匹配单词';
+    document.getElementById('vocabCardPos').textContent = '';
+    document.getElementById('vocabCardZh').textContent = '';
+    document.getElementById('vocabCardEn').textContent = '';
+    document.getElementById('vocabCardCn').textContent = '';
+    document.getElementById('vocabCardSyn').textContent = '';
+    return;
+  }
+  const w = vocabBrowseList[vocabBrowseIndex];
+  document.getElementById('vocabCardWord').textContent = w.w;
+  document.getElementById('vocabCardPos').textContent = w.pos + ' · ' + w.catName;
+  document.getElementById('vocabCardZh').textContent = w.zh;
+  document.getElementById('vocabCardEn').textContent = w.en;
+  document.getElementById('vocabCardCn').textContent = w.cn;
+  document.getElementById('vocabCardSyn').textContent = w.syn ? '近义词：' + w.syn : '';
+  document.getElementById('vocabFlashcard').classList.remove('flipped');
+}
+
+function flipVocabCard() {
+  if (!vocabBrowseList.length) return;
+  document.getElementById('vocabFlashcard').classList.toggle('flipped');
+}
+
+function prevVocabCard() {
+  if (!vocabBrowseList.length) return;
+  vocabBrowseIndex = (vocabBrowseIndex - 1 + vocabBrowseList.length) % vocabBrowseList.length;
+  renderVocabCard();
+}
+
+function nextVocabCard() {
+  if (!vocabBrowseList.length) return;
+  vocabBrowseIndex = (vocabBrowseIndex + 1) % vocabBrowseList.length;
+  renderVocabCard();
+}
+
+function shuffleVocabCard() {
+  if (!vocabBrowseList.length) return;
+  vocabBrowseIndex = Math.floor(Math.random() * vocabBrowseList.length);
+  renderVocabCard();
+}
+
+function rateVocabCard(rating) {
+  if (!vocabBrowseList.length || !vocabIdentity) return;
+  applyVocabRating(vocabBrowseList[vocabBrowseIndex].w, rating);
+  updateVocabSidebar();
+  nextVocabCard();
+}
+
+// ─── 词汇总览 (手风琴列表) ───
+
+function renderVocabGlossary() {
+  const container = document.getElementById('vocabGlossaryList');
+  const q = document.getElementById('vocabSearchInput').value.trim().toLowerCase();
+  let html = '';
+  VOCAB_CATEGORIES.forEach(cat => {
+    if (vocabActiveCat !== 'all' && vocabActiveCat !== cat.id) return;
+    const words = cat.words.filter(w => !q || w.w.toLowerCase().includes(q) || w.zh.includes(q));
+    if (q && words.length === 0) return;
+    html += '<div class="listening-cat-accordion' + (q ? ' open' : '') + '">';
+    html += '<div class="listening-cat-header" onclick="toggleVocabCat(this)">';
+    html += '<span class="listening-cat-chevron">▶</span>';
+    html += '<span>' + cat.name + '</span>';
+    html += '<span style="font-size:12px;color:var(--text-tertiary)">' + cat.sub + '</span>';
+    html += '<span class="listening-cat-count">' + words.length + ' 词</span>';
+    html += '</div>';
+    html += '<div class="listening-cat-body">';
+    words.forEach(w => {
+      html += '<div class="vocab-word-row">';
+      html += '<span class="vocab-word-w">' + escHtml(w.w) + '</span>';
+      html += '<span class="vocab-word-pos">' + escHtml(w.pos) + '</span>';
+      html += '<span class="vocab-word-zh">' + escHtml(w.zh) + '</span>';
+      html += '</div>';
+    });
+    html += '</div></div>';
+  });
+  container.innerHTML = html;
+}
+
+function toggleVocabCat(el) {
+  el.parentElement.classList.toggle('open');
+}
+
+// ─── 间隔重复 Tab ───
+
+function collectDueWords() {
+  const prog = getVocabIdentityProgress();
+  const now = Date.now();
+  const due = [];
+  const fresh = [];
+  VOCAB_ALL_WORDS.forEach(w => {
+    const s = prog[w.w];
+    if (!s || (s.level === 0 && !s.next)) {
+      fresh.push(w);
+    } else if (s.next && s.next <= now) {
+      due.push(w);
+    }
+  });
+  due.sort((a, b) => (prog[a.w].next - prog[b.w].next));
+  const shuffledFresh = [...fresh].sort(() => Math.random() - 0.5);
+  return { queue: [...due, ...shuffledFresh].slice(0, VOCAB_DAILY_NEW), dueCount: due.length, freshCount: shuffledFresh.length };
+}
+
+function startVocabReview() {
+  if (!vocabIdentity) return;
+  const { queue } = collectDueWords();
+  if (queue.length === 0) {
+    document.getElementById('vocabReviewDone').innerHTML = '<div class="vocab-review-header"><div class="vocab-review-count">🎉 今天没有待复习的单词</div><div class="vocab-review-sub">所有到期单词已复习完毕，明天再来吧！</div></div>';
+    document.getElementById('vocabReviewDone').style.display = '';
+    document.getElementById('vocabReviewBoard').style.display = 'none';
+    document.getElementById('vocabReviewEmpty').style.display = 'none';
+    return;
+  }
+  vocabReview = { queue, index: 0 };
+  document.getElementById('vocabReviewEmpty').style.display = 'none';
+  document.getElementById('vocabReviewDone').style.display = 'none';
+  document.getElementById('vocabReviewBoard').style.display = '';
+  renderVocabReviewCard();
+}
+
+function renderVocabReviewCard() {
+  const w = vocabReview.queue[vocabReview.index];
+  document.getElementById('vocabReviewWord').textContent = w.w;
+  document.getElementById('vocabReviewPos').textContent = w.pos + ' · ' + w.catName;
+  document.getElementById('vocabReviewZh').textContent = w.zh;
+  document.getElementById('vocabReviewEn').textContent = w.en;
+  document.getElementById('vocabReviewCn').textContent = w.cn;
+  document.getElementById('vocabReviewSyn').textContent = w.syn ? '近义词：' + w.syn : '';
+  document.getElementById('vocabReviewCard').classList.remove('flipped');
+  document.getElementById('vocabReviewCount').textContent = '第 ' + (vocabReview.index + 1) + ' / ' + vocabReview.queue.length + ' 个';
+  const s = getVocabIdentityProgress()[w.w];
+  const label = (!s || (s.level === 0 && !s.next)) ? '🆕 新词' : '🔁 复习 · 等级 ' + s.level;
+  document.getElementById('vocabReviewSub').textContent = label;
+  document.getElementById('vspProgressFill').style.width = (vocabReview.index / vocabReview.queue.length * 100) + '%';
+}
+
+function flipVocabReviewCard() {
+  document.getElementById('vocabReviewCard').classList.toggle('flipped');
+}
+
+function rateVocabReview(rating) {
+  if (!vocabReview) return;
+  const w = vocabReview.queue[vocabReview.index];
+  applyVocabRating(w.w, rating);
+  updateVocabSidebar();
+  vocabReview.index++;
+  if (vocabReview.index >= vocabReview.queue.length) {
+    finishVocabReview();
+  } else {
+    renderVocabReviewCard();
+  }
+}
+
+function finishVocabReview() {
+  const total = vocabReview.queue.length;
+  const mastered = countVocabMastered();
+  document.getElementById('vocabReviewBoard').style.display = 'none';
+  document.getElementById('vocabReviewDone').style.display = '';
+  document.getElementById('vocabReviewDone').innerHTML =
+    '<div class="vocab-review-header"><div class="vocab-review-count">🎉 本轮复习完成！</div>' +
+    '<div class="vocab-review-sub">共复习 ' + total + ' 个单词 · 当前已掌握 ' + mastered + ' 词</div></div>' +
+    '<div style="text-align:center;padding:12px"><button class="btn btn-primary" onclick="resetVocabReview()">🔁 再来一轮</button></div>';
+  vocabReview = null;
+}
+
+function resetVocabReview() {
+  vocabReview = null;
+  document.getElementById('vocabReviewEmpty').style.display = '';
+  document.getElementById('vocabReviewBoard').style.display = 'none';
+  document.getElementById('vocabReviewDone').style.display = 'none';
+  document.getElementById('vocabReviewDone').innerHTML = '';
+  document.getElementById('vspProgressFill').style.width = '0%';
+  updateVocabSidebar();
+}
+
+// ─── 侧边栏 ───
+
+function countVocabMastered() {
+  if (!vocabIdentity) return 0;
+  const prog = getVocabIdentityProgress();
+  return Object.values(prog).filter(s => s && s.level >= 3).length;
+}
+
+function updateVocabSidebar() {
+  if (!vocabIdentity) {
+    document.getElementById('vocabSidebarIdentity').textContent = '-';
+    document.getElementById('vspMastered').textContent = '0';
+    document.getElementById('vspLearning').textContent = '0';
+    document.getElementById('vspDue').textContent = '0';
+    document.getElementById('vspTotal').textContent = '0%';
+    document.getElementById('vspCategoryMastery').innerHTML = '<div style="font-size:12px;color:var(--text-tertiary);padding:8px 0">选择身份后显示</div>';
+    return;
+  }
+  const prog = getVocabIdentityProgress();
+  const values = Object.values(prog);
+  const now = Date.now();
+  const mastered = values.filter(s => s && s.level >= 3).length;
+  const learning = values.filter(s => s && s.level >= 1 && s.level < 3).length;
+  const due = values.filter(s => s && s.next && s.next <= now).length;
+  const totalPct = Math.round(mastered / VOCAB_ALL_WORDS.length * 100);
+  document.getElementById('vocabSidebarIdentity').textContent = vocabIdentity === 'eric' ? '👤 Eric' : '👤 Sophia';
+  document.getElementById('vspMastered').textContent = mastered;
+  document.getElementById('vspLearning').textContent = learning;
+  document.getElementById('vspDue').textContent = due;
+  document.getElementById('vspTotal').textContent = totalPct + '%';
+
+  let mhtml = '';
+  VOCAB_CATEGORIES.forEach(cat => {
+    const masteredInCat = cat.words.filter(w => { const s = prog[w.w]; return s && s.level >= 3; }).length;
+    const pct = Math.round(masteredInCat / cat.words.length * 100);
+    mhtml += '<div class="vocab-mastery-bar"><div class="vocab-mastery-label"><span>' + cat.name + '</span><span>' + masteredInCat + '/' + cat.words.length + '</span></div>';
+    mhtml += '<div class="band-bar-track"><div class="band-bar-fill" style="width:' + pct + '%"></div></div></div>';
+  });
+  document.getElementById('vspCategoryMastery').innerHTML = mhtml;
+}
+
+function toggleVocabularySidebar() {
+  document.getElementById('vocabularySidebar').classList.toggle('open');
+  document.getElementById('vocabularySidebarBackdrop').classList.toggle('show');
+}
+function closeVocabularySidebar() {
+  document.getElementById('vocabularySidebar').classList.remove('open');
+  document.getElementById('vocabularySidebarBackdrop').classList.remove('show');
+}
+
+// ══════════════════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
@@ -4264,6 +4867,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('writingWorkspace').classList.remove('active');
   document.getElementById('speakingWorkspace').classList.remove('active');
   document.getElementById('listeningWorkspace').classList.remove('active');
+  document.getElementById('vocabularyWorkspace').classList.remove('active');
   document.getElementById('gradingView').classList.remove('active');
   drawIdleWaveform();
   // init listening glossary in background

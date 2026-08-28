@@ -4,9 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-IELTS AI Grader — AI 驱动的雅思写作 + 口语 + 听力三模式智能评分与练习工具。纯前端单文件（`index.html`），通过 DeepSeek Chat API 实时评分，Groq Whisper 免费语音转写，部署在 GitHub Pages。
+IELTS AI Grader — AI 驱动的雅思写作 + 口语 + 听力 + 背单词四模式智能评分与练习工具。纯前端，通过 DeepSeek Chat API 实时评分，Groq Whisper 免费语音转写，部署在 GitHub Pages。
 
 **v3 已包含**：听力同义替换模块——纯客户端游戏化练习，零 API 调用，115 组高频同义词对 + 陷阱词参考。
+
+**v4 已包含**：背单词模块——1000 个 G类核心词（`vocabulary-data.js`），闪卡浏览 + 间隔重复，双身份（Eric / Sophia）进度独立，零 API 调用。
 
 ## Commands
 
@@ -22,7 +24,7 @@ git push origin main
 # 仓库: https://github.com/funkyericgou-max/ielts-essay-grader
 ```
 
-没有构建工具、lint、测试套件。这是一个零依赖的单文件纯前端项目。
+没有构建工具、lint、测试套件。零依赖纯前端项目：1 个逻辑文件（`index.html`）+ 1 个数据文件（`vocabulary-data.js`），其余数据（听力同义词对）仍以 JS 常量内联在 `index.html` 内。
 
 ## Architecture
 
@@ -31,10 +33,11 @@ git push origin main
 ```
 首页 (Home) ──→ Writing 工作区
            ├──→ Speaking 工作区
-           └──→ Listening 工作区
+           ├──→ Listening 工作区
+           └──→ Vocabulary 工作区
 ```
 
-`AppState.mode`: `'home'` | `'writing'` | `'speaking'` | `'listening'`
+`AppState.mode`: `'home'` | `'writing'` | `'speaking'` | `'listening'` | `'vocabulary'`
 
 ### 数据流 — 写作
 
@@ -79,12 +82,26 @@ git push origin main
   → 10 轮结束后展示完整结果 + 错误回顾
 ```
 
-### 关键模块位置（均在 `index.html` 内）
+### 数据流 — 背单词（纯客户端，零 API）
+
+```
+进入背单词工作区 → 选择身份 (Eric / Sophia)
+  ├─→ Tab1 闪卡浏览: 搜索 + 分类筛选 → 翻卡看释义/例句 → 认识/不认识
+  └─→ Tab2 间隔重复: 到期词 + 每日新词(20) → 三档评分(不认识/模糊/认识)
+          │
+          ▼
+  写入 localStorage.vocab_progress (按身份隔离, {level, next})
+          │
+          ▼
+  侧边栏实时更新: 已掌握 / 学习中 / 今日待复习 / 分类掌握度
+```
+
+### 关键模块位置（`index.html` 内 + `vocabulary-data.js`）
 
 | 模块 | 大致区域 | 说明 |
 |------|---------|------|
 | CSS 变量与主题 | `:root` 块 | 颜色、字体、阴影、Band 分数色阶 |
-| 首页入口 | `#homePage` | Writing / Speaking / Listening 三张入口卡片 |
+| 首页入口 | `#homePage` | Writing / Speaking / Listening / Vocabulary 四张入口卡片 |
 | 写作工作区 | `#writingWorkspace` | 现有全部 UI（保持不变） |
 | 写作输入面板 | `#inputPanel` | Task Toggle + 题目/作文 textarea + 字数警告 |
 | 写作结果视图 | `.grading-view` + `.tab` | 7 个 Tab |
@@ -100,6 +117,10 @@ git push origin main
 | 听力工作区 | `#listeningWorkspace` | 大纲展示 + 游戏模式，纯客户端，零 API |
 | 同义词数据 | `LISTENING_CATEGORIES` / `LISTENING_TRAP_GROUPS` | 115 组同义词对嵌入为 JS 常量 |
 | 游戏引擎 | `startListeningGame()` → `submitListeningRound()` | 10 轮随机匹配，tile 点选，正确/误选/漏选着色 |
+| 背单词工作区 | `#vocabularyWorkspace` | 身份选择 + 单词卡 + 间隔重复双 Tab，纯客户端，零 API |
+| 词汇数据 | `vocabulary-data.js` | `VOCAB_CATEGORIES` / `VOCAB_ALL_WORDS`，1000 个 G类核心词（10 分类 × 100） |
+| 身份与进度 | `vocab_progress` (localStorage) | 按身份隔离 `{ eric, sophia }`，每词 `{ level: 0..5, next }` |
+| 间隔重复引擎 | `applyVocabRating()` → `startVocabReview()` | 三档评分调度，到期词优先 + 每日新词 20 个 |
 
 ### AI 标注的 CSS 类体系
 
@@ -125,7 +146,7 @@ git push origin main
 DOCS/*.md (设计) → review → index.html (实现) → examples/ (验证)
 ```
 
-11 个设计文档在 [DOCS/](DOCS/) 下，覆盖评分体系、UI 设计、技术架构、Prompt Engineering、开发步骤、部署、局限性、未来路线、口语整体设计和听力同义替换设计。**修改任何功能前，先读对应设计文档。**
+12 个设计文档在 [DOCS/](DOCS/) 下，覆盖评分体系、UI 设计、技术架构、Prompt Engineering、开发步骤、部署、局限性、未来路线、口语整体设计、听力同义替换设计和背单词设计。**修改任何功能前，先读对应设计文档。**
 
 ### CoT 三步推理法（Prompt 核心）
 
@@ -167,5 +188,5 @@ try { return JSON.parse(cleaned); } catch (e) { /* 渲染原始文本到 textare
 - **口语发音评分**：AI 间接推断，非真实音频分析，需向用户标注
 - **Task 1 / Task 2 差异**：两套完全不同的 Band Descriptors 量表和 TA 侧重点
 - **部署约束**：纯静态 GitHub Pages，无后端，API Key 不可写入源码
-- **代码量**：单文件约 4300 行，按模块注释分隔
+- **代码量**：`index.html` 逻辑约 4700 行 + `vocabulary-data.js` 数据约 1000 词，按模块注释分隔
 - **已知风险**：AI 评分偏差、同篇多次评分不一致（temperature=0.3 缓解）、JSON 截断（防御解析兜底）、STT 转写误差、发音间接推断不准
