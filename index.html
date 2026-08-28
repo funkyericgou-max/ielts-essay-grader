@@ -1325,6 +1325,9 @@
       <div class="sidebar-heading">📂 分类掌握度</div>
       <div class="band-overview" id="vspCategoryMastery"></div>
     </div>
+    <div class="sidebar-section animate-in delay-3">
+      <button class="btn btn-secondary" onclick="openVocabShare()" style="width:100%;font-size:12px">📤 分享学习进展</button>
+    </div>
   </aside>
 
   <main class="main">
@@ -1436,6 +1439,18 @@
     </div>
   </main>
 </div>
+
+<!-- 分享进展弹窗 -->
+<div class="modal-overlay" id="vocabShareModal">
+  <div class="modal-box">
+    <div class="modal-title">📤 分享学习进展</div>
+    <pre id="vocabShareText" style="white-space:pre-wrap;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;font-size:13px;line-height:1.9;color:var(--text-primary);margin:12px 0 0;min-height:120px;max-height:60vh;overflow:auto"></pre>
+    <div class="modal-btn-row">
+      <button class="btn btn-secondary" onclick="closeVocabShare()">关闭</button>
+      <button class="btn btn-primary" id="vocabShareCopyBtn" onclick="copyVocabShare()">📋 复制文本</button>
+    </div>
+  </div>
+</div>
 </div><!-- /#vocabularyWorkspace -->
 
 <script src="vocabulary-data.js"></script>
@@ -1443,7 +1458,7 @@
 <script>
 // ══════════════════════════════════════════════════════════════
 // CONFIG & STATE
-const APP_VERSION = '2.5.0'; // + 背单词闪卡改版: 音标/例句上正面, 去分类, 键盘快捷键, 不认识自动翻面
+const APP_VERSION = '2.6.0'; // + 背单词分享进展（侧边栏 → 生成文字总结 → 一键复制）
 // ══════════════════════════════════════════════════════════════
 let currentTaskType = 'task2'; // 'task1' or 'task2'
 let gradingResult = null;
@@ -4939,6 +4954,102 @@ function vocabKeydown(e) {
   }
 }
 document.addEventListener('keydown', vocabKeydown);
+
+// ─── 分享学习进展 ───
+// 快照存 localStorage.vocab_share_progress（按身份），以“上次实际复制分享”为基准算增量
+
+let vocabSharePending = null; // { snapshot, text } —— 复制成功后才提交快照
+
+function getVocabShareStats() {
+  const prog = getVocabIdentityProgress();
+  const values = Object.values(prog);
+  const learned = values.filter(s => s && s.level >= 1).length;
+  const mastered = values.filter(s => s && s.level >= 3).length;
+  const due = values.filter(s => s && s.next && s.next <= Date.now()).length;
+  return { learned: learned, mastered: mastered, due: due, total: VOCAB_ALL_WORDS.length };
+}
+function getVocabShareSnapshots() {
+  try { return JSON.parse(localStorage.getItem('vocab_share_progress')) || {}; }
+  catch (e) { return {}; }
+}
+function saveVocabShareSnapshots(s) { localStorage.setItem('vocab_share_progress', JSON.stringify(s)); }
+
+function fmtShareElapsed(ms) {
+  const m = Math.floor(ms / 60000);
+  if (m < 1) return '刚刚';
+  if (m < 60) return m + ' 分钟';
+  const h = Math.floor(m / 60);
+  if (h < 24) return h + ' 小时' + (m % 60 ? ' ' + (m % 60) + ' 分钟' : '');
+  const d = Math.floor(h / 24);
+  return d + ' 天' + (h % 24 ? ' ' + (h % 24) + ' 小时' : '');
+}
+
+function openVocabShare() {
+  if (!vocabIdentity) { alert('请先选择学习身份'); return; }
+  const name = vocabIdentity === 'eric' ? 'Eric' : 'Sophia';
+  const stats = getVocabShareStats();
+  const prev = getVocabShareSnapshots()[vocabIdentity] || null;
+  const now = Date.now();
+  const pct = Math.round(stats.mastered / stats.total * 100);
+  let text;
+  if (prev) {
+    const dLearned = stats.learned - prev.learned;
+    const dMastered = stats.mastered - prev.mastered;
+    text = '📚 IELTS 背单词进展 · ' + name + '\n' +
+      '⏱ 距上次分享：' + fmtShareElapsed(now - prev.time) + '\n' +
+      '🆕 新增学习：' + (dLearned > 0 ? '+' : '') + dLearned + ' 词\n' +
+      '✅ 新增掌握：' + (dMastered > 0 ? '+' : '') + dMastered + ' 词\n' +
+      '──────────────\n' +
+      '📈 累计学习：' + stats.learned + ' 词\n' +
+      '🎯 已掌握：' + stats.mastered + ' 词（' + pct + '%）\n' +
+      '🗓 今日待复习：' + stats.due + ' 词';
+  } else {
+    text = '📚 IELTS 背单词进展 · ' + name + '\n' +
+      '🎉 首次分享！\n' +
+      '📈 累计学习：' + stats.learned + ' 词\n' +
+      '🎯 已掌握：' + stats.mastered + ' 词（' + pct + '%）\n' +
+      '🗓 今日待复习：' + stats.due + ' 词';
+  }
+  vocabSharePending = { snapshot: { time: now, learned: stats.learned, mastered: stats.mastered }, text: text };
+  document.getElementById('vocabShareText').textContent = text;
+  document.getElementById('vocabShareCopyBtn').textContent = '📋 复制文本';
+  document.getElementById('vocabShareModal').classList.add('active');
+}
+
+function copyVocabShare() {
+  if (!vocabSharePending) return;
+  const commit = () => {
+    const snaps = getVocabShareSnapshots();
+    snaps[vocabIdentity] = vocabSharePending.snapshot;
+    saveVocabShareSnapshots(snaps);
+    vocabSharePending = null;
+    document.getElementById('vocabShareCopyBtn').textContent = '✅ 已复制';
+    setTimeout(closeVocabShare, 1200);
+  };
+  const text = vocabSharePending.text;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(commit, () => fallbackCopyShare(text, commit));
+  } else {
+    fallbackCopyShare(text, commit);
+  }
+}
+function fallbackCopyShare(text, done) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); } catch (e) {}
+  document.body.removeChild(ta);
+  done();
+}
+
+function closeVocabShare() {
+  document.getElementById('vocabShareModal').classList.remove('active');
+  document.getElementById('vocabShareCopyBtn').textContent = '📋 复制文本';
+  vocabSharePending = null; // 未复制就关闭：不更新快照，下次仍从上次实际分享算起
+}
 
 // ══════════════════════════════════════════════════════════════
 // INIT
