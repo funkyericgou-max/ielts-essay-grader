@@ -1471,7 +1471,7 @@
 <script>
 // ══════════════════════════════════════════════════════════════
 // CONFIG & STATE
-const APP_VERSION = '2.7.0'; // + 单词朗读：🔊 发音按钮 + 自动朗读开关（浏览器内置 TTS，零下载）
+const APP_VERSION = '2.7.1'; // + 自动朗读默认开启（单词一出现即读，可手动关闭）
 // ══════════════════════════════════════════════════════════════
 let currentTaskType = 'task2'; // 'task1' or 'task2'
 let gradingResult = null;
@@ -5097,7 +5097,8 @@ function speakReviewWord() {
   }
 }
 function getVocabAutoSpeak() {
-  return localStorage.getItem('vocab_autospeak') === '1';
+  const v = localStorage.getItem('vocab_autospeak');
+  return v === null ? true : v === '1'; // 默认开启：单词一出现即自动朗读
 }
 function toggleVocabAutoSpeak() {
   localStorage.setItem('vocab_autospeak', document.getElementById('vocabAutoSpeak').checked ? '1' : '0');
