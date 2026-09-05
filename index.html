@@ -373,6 +373,19 @@
   .modal-btn-row{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
   .modal-hint{font-size:12px;color:var(--text-tertiary);margin-top:12px;line-height:1.6}
 
+  /* ─── Speaking Topic Bank Modal ─── */
+  .speaking-topic-box{width:720px;max-width:92vw;max-height:85vh;display:flex;flex-direction:column}
+  .speaking-topic-cats{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+  .speaking-topic-cat-chip{padding:6px 16px;border-radius:16px;border:1px solid var(--border);background:var(--surface-2);color:var(--text-secondary);font-size:13px;font-weight:500;cursor:pointer;transition:all .12s}
+  .speaking-topic-cat-chip:hover{border-color:var(--accent-mid)}
+  .speaking-topic-cat-chip.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .speaking-topic-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;overflow-y:auto;padding-right:4px}
+  .speaking-topic-card{text-align:left;padding:14px 16px;border:1.5px solid var(--border);border-radius:var(--radius);background:var(--surface-2);cursor:pointer;transition:all .15s}
+  .speaking-topic-card:hover{border-color:var(--accent);background:var(--surface);transform:translateY(-2px)}
+  .speaking-topic-card-title{font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:4px}
+  .speaking-topic-card-en{font-size:12px;color:var(--text-secondary);line-height:1.5;margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .speaking-topic-card-date{font-size:11px;color:var(--text-tertiary)}
+
   /* ─── Fallback ─── */
   .fallback-box{
     background:rgba(192,57,43,.04);border:1px solid rgba(192,57,43,.2);border-radius:var(--radius-lg);
@@ -1119,7 +1132,10 @@
       <p class="hint">输入 Cue Card 题目，录制你的口语回答，AI 考官将从四个维度评分</p>
 
       <div class="form-group">
-        <label>Cue Card 题目 / 话题卡</label>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <label style="margin:0">Cue Card 题目 / 话题卡</label>
+          <button class="btn btn-outline" onclick="openSpeakingTopicBank()" style="padding:6px 14px;font-size:12px;flex-shrink:0">📚 口语题库</button>
+        </div>
         <textarea id="cueCardInput" style="background:var(--surface);border:1.5px solid var(--border);font-family:var(--font-body);font-size:13px;line-height:1.7;resize:vertical;padding:12px;border-radius:var(--radius);width:100%;min-height:100px" placeholder="Describe a memorable trip you have taken. You should say: where you went, who you went with, what you did there, and explain why it was memorable."></textarea>
       </div>
 
@@ -1466,12 +1482,26 @@
 </div>
 </div><!-- /#vocabularyWorkspace -->
 
+<!-- 口语题库弹窗 -->
+<div class="modal-overlay" id="speakingTopicModal" onclick="if(event.target===this)closeSpeakingTopicBank()">
+  <div class="modal-box speaking-topic-box">
+    <div class="modal-title">📚 口语题库 <span style="font-size:12px;font-weight:400;color:var(--text-tertiary)">2026.9-12 新题 · Part 2 Cue Card</span></div>
+    <div class="modal-desc" style="margin-bottom:12px">点选一道 Cue Card，题目会自动填入答题区，然后照常录音评分。</div>
+    <div class="speaking-topic-cats" id="speakingTopicCats"></div>
+    <div class="speaking-topic-grid" id="speakingTopicGrid"></div>
+    <div class="modal-btn-row">
+      <button class="btn btn-secondary" onclick="closeSpeakingTopicBank()">关闭</button>
+    </div>
+  </div>
+</div>
+
 <script src="vocabulary-data.js"></script>
 <script src="phonetics-data.js"></script>
+<script src="speaking-topics.js"></script>
 <script>
 // ══════════════════════════════════════════════════════════════
 // CONFIG & STATE
-const APP_VERSION = '2.7.1'; // + 自动朗读默认开启（单词一出现即读，可手动关闭）
+const APP_VERSION = '2.8.0'; // + 口语题库（2026.9-12 新题 Part 2 Cue Card，分类卡片弹窗点选）
 // ══════════════════════════════════════════════════════════════
 let currentTaskType = 'task2'; // 'task1' or 'task2'
 let gradingResult = null;
@@ -3933,6 +3963,46 @@ function drawPauseChart(meta) {
   ctx.fillText('0s', padding, padding + chartH + 16);
   ctx.fillText(total + 's', w - padding, padding + chartH + 16);
   ctx.fillText('停顿分布', w/2, padding - 10);
+}
+
+// ══════════════════════════════════════════════════════════════
+// SPEAKING: TOPIC BANK (题库)
+// ══════════════════════════════════════════════════════════════
+let speakingTopicActiveCat = 'people';
+
+function openSpeakingTopicBank() {
+  speakingTopicActiveCat = (SPEAKING_TOPIC_CATEGORIES[0] || {}).id || 'people';
+  renderSpeakingTopicBank();
+  document.getElementById('speakingTopicModal').classList.add('active');
+}
+
+function closeSpeakingTopicBank() {
+  document.getElementById('speakingTopicModal').classList.remove('active');
+}
+
+function renderSpeakingTopicBank() {
+  const catsEl = document.getElementById('speakingTopicCats');
+  catsEl.innerHTML = SPEAKING_TOPIC_CATEGORIES.map(function (c) {
+    return '<div class="speaking-topic-cat-chip' + (c.id === speakingTopicActiveCat ? ' active' : '') + '" onclick="speakingTopicActiveCat=\'' + c.id + '\';renderSpeakingTopicBank()">' + c.icon + ' ' + c.name + '<span style="opacity:.7;margin-left:4px">' + c.topics.length + '</span></div>';
+  }).join('');
+
+  const cat = SPEAKING_TOPIC_CATEGORIES.find(function (c) { return c.id === speakingTopicActiveCat; }) || SPEAKING_TOPIC_CATEGORIES[0];
+  const grid = document.getElementById('speakingTopicGrid');
+  grid.innerHTML = cat.topics.map(function (t, i) {
+    return '<button class="speaking-topic-card" onclick="selectSpeakingTopic(\'' + cat.id + '\',' + i + ')">' +
+      '<div class="speaking-topic-card-title">' + t.zh + '</div>' +
+      '<div class="speaking-topic-card-en">' + t.cue.split('\n')[0] + '</div>' +
+      '<div class="speaking-topic-card-date">📅 ' + t.date + ' 出现</div>' +
+    '</button>';
+  }).join('');
+}
+
+function selectSpeakingTopic(catId, idx) {
+  const cat = SPEAKING_TOPIC_CATEGORIES.find(function (c) { return c.id === catId; });
+  if (!cat || !cat.topics[idx]) return;
+  document.getElementById('cueCardInput').value = cat.topics[idx].cue;
+  closeSpeakingTopicBank();
+  document.getElementById('cueCardInput').focus();
 }
 
 // ══════════════════════════════════════════════════════════════

@@ -30,7 +30,7 @@ git push origin main
 # 仓库: https://github.com/funkyericgou-max/ielts-essay-grader
 ```
 
-没有构建工具、lint、测试套件。零依赖纯前端项目：1 个逻辑文件（`index.html`）+ 2 个数据文件（`vocabulary-data.js`、`phonetics-data.js`），其余数据（听力同义词对）仍以 JS 常量内联在 `index.html` 内。
+没有构建工具、lint、测试套件。零依赖纯前端项目：1 个逻辑文件（`index.html`）+ 3 个数据文件（`vocabulary-data.js`、`phonetics-data.js`、`speaking-topics.js`），其余数据（听力同义词对）仍以 JS 常量内联在 `index.html` 内。
 
 ## Architecture
 
@@ -112,6 +112,7 @@ git push origin main
 | 写作输入面板 | `#inputPanel` | Task Toggle + 题目/作文 textarea + 字数警告 |
 | 写作结果视图 | `.grading-view` + `.tab` | 7 个 Tab |
 | 语音工作区 | `#speakingWorkspace` | Cue Card + 录音区 + Canvas 波形 + 结果视图 |
+| 口语题库 | `speaking-topics.js` + `#speakingTopicModal` | 2026.9-12 新题 Part 2 Cue Card，分类卡片弹窗点选填入 textarea |
 | 录音管理 | `AudioRecorder` 类 | start/pause/resume/stop/playback |
 | 音频分析 | `AudioAnalyzer` 类 | WPM/停顿检测/音量变化 |
 | 波形绘制 | `WaveformRenderer` 类 | Canvas 实时波形 |
