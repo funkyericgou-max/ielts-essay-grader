@@ -375,11 +375,14 @@
 
   /* ─── Speaking Topic Bank Modal ─── */
   .speaking-topic-box{width:720px;max-width:92vw;max-height:85vh;display:flex;flex-direction:column}
+  .speaking-topic-box .modal-title,
+  .speaking-topic-box .modal-desc,
+  .speaking-topic-cats{flex-shrink:0}
   .speaking-topic-cats{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
   .speaking-topic-cat-chip{padding:6px 16px;border-radius:16px;border:1px solid var(--border);background:var(--surface-2);color:var(--text-secondary);font-size:13px;font-weight:500;cursor:pointer;transition:all .12s}
   .speaking-topic-cat-chip:hover{border-color:var(--accent-mid)}
   .speaking-topic-cat-chip.active{background:var(--accent);color:#fff;border-color:var(--accent)}
-  .speaking-topic-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;overflow-y:auto;padding-right:4px}
+  .speaking-topic-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;height:min(46vh,420px);min-height:240px;overflow-y:auto;padding-right:6px;align-content:start;scrollbar-gutter:stable}
   .speaking-topic-card{text-align:left;padding:14px 16px;border:1.5px solid var(--border);border-radius:var(--radius);background:var(--surface-2);cursor:pointer;transition:all .15s}
   .speaking-topic-card:hover{border-color:var(--accent);background:var(--surface);transform:translateY(-2px)}
   .speaking-topic-card-title{font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:4px}
@@ -1501,7 +1504,7 @@
 <script>
 // ══════════════════════════════════════════════════════════════
 // CONFIG & STATE
-const APP_VERSION = '2.8.0'; // + 口语题库（2026.9-12 新题 Part 2 Cue Card，分类卡片弹窗点选）
+const APP_VERSION = '2.8.1'; // + 口语题库弹窗固定高度，切分类不跳动、列表回顶
 // ══════════════════════════════════════════════════════════════
 let currentTaskType = 'task2'; // 'task1' or 'task2'
 let gradingResult = null;
@@ -3995,6 +3998,7 @@ function renderSpeakingTopicBank() {
       '<div class="speaking-topic-card-date">📅 ' + t.date + ' 出现</div>' +
     '</button>';
   }).join('');
+  grid.scrollTop = 0; // 切分类回到列表顶端
 }
 
 function selectSpeakingTopic(catId, idx) {
