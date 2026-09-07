@@ -30,7 +30,7 @@ git push origin main
 # 仓库: https://github.com/funkyericgou-max/ielts-essay-grader
 ```
 
-没有构建工具、lint、测试套件。零依赖纯前端项目：1 个逻辑文件（`index.html`）+ 3 个数据文件（`vocabulary-data.js`、`phonetics-data.js`、`speaking-topics.js`），其余数据（听力同义词对）仍以 JS 常量内联在 `index.html` 内。
+没有构建工具、lint、测试套件。零依赖纯前端项目：1 个逻辑文件（`index.html`）+ 4 个数据文件（`vocabulary-data.js`、`phonetics-data.js`、`speaking-topics.js`、`simon-lessons.js`），其余数据（听力同义词对）仍以 JS 常量内联在 `index.html` 内。`simon-lessons.js` 为 Simon 口语课示范学习材料库，尚未接入 UI，供后续做「口语学习任务」取用。
 
 ## Architecture
 
