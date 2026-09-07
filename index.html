@@ -1229,6 +1229,7 @@
           <span class="qa-step-progress" id="qaStepProgress"></span>
           <div style="flex:1"></div>
           <button class="btn btn-outline" id="qaRevertBtn" onclick="qaRevert()" style="display:none;padding:6px 14px;font-size:12px">↶ 上一题</button>
+          <button class="btn btn-outline" id="qaSimonBtn" onclick="openSimonTask()" style="padding:6px 14px;font-size:12px">📖 Simon 示范</button>
           <button class="btn btn-outline" onclick="openSpeakingTopicBank(speakingPart)" style="padding:6px 14px;font-size:12px">📚 题库 / 换一组</button>
         </div>
         <div class="qa-question-card">
@@ -1629,7 +1630,7 @@
 <script>
 // ══════════════════════════════════════════════════════════════
 // CONFIG & STATE
-const APP_VERSION = '2.10.0'; // + 口语三场景 P1/P2/P3 (v5) + P2 答题思路卡(题库选题→同类型Simon高分词+跳完整示范)
+const APP_VERSION = '2.11.0'; // + Simon 任务按场景分流：P1 问答示范(lesson2)可「试答这题」走QA评分; P2 独白示范不变
 // ══════════════════════════════════════════════════════════════
 let currentTaskType = 'task2'; // 'task1' or 'task2'
 let gradingResult = null;
@@ -2047,6 +2048,9 @@ function renderSpeakingPartUI() {
   if (cueInput && !isP2) cueInput.placeholder = '';
   document.querySelectorAll('#spPartToggle .sp-part-btn').forEach(b =>
     b.classList.toggle('active', b.dataset.part === speakingPart));
+  // Simon 示范入口只在有对应示范的场景显示（P1 有问答示范；P3 暂无，P2 用题卡下方按钮）
+  const qsb = document.getElementById('qaSimonBtn');
+  if (qsb) qsb.style.display = (speakingPart === 'p1') ? '' : 'none';
   setMicFallbackP2Mode(); // P2 手动输入默认语义；QA 文字模式进入时覆盖
   if (isP2) {
     hideMicFallbackEditor();
@@ -4850,6 +4854,7 @@ function showP2IdeaTip(catId) {
 let simonList = [];
 let simonIdx = 0;
 let simonShowSample = false;
+let simonTaskPart = 'p2';   // 当前任务所属场景（p1/p2），决定示范列表与试答方式
 // Simon 课类型 → 口语题库分类映射（换同类真题用）
 const SIMON_CAT2TOPIC = { person: 'people', place: 'places', object: 'things', event: 'events', activity: 'events' };
 
@@ -4857,9 +4862,23 @@ function simonEsc(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-function simonFlatten() {
+// 某个练习块 key（如 '4#0'）属于哪一场景
+function simonLessonKeyPart(key) {
+  const ln = String(key).split('#')[0];
+  const L = SIMON_LESSONS.lessons.find(function (x) { return String(x.lessonNo) === ln; });
+  return L ? (L.examPart || 'p2') : 'p2';
+}
+
+function simonHasLessonsFor(part) {
+  return SIMON_LESSONS.lessons.some(function (L) { return (L.examPart || 'p2') === part; });
+}
+
+// 只取指定场景的示范任务
+function simonFlatten(part) {
   const arr = [];
+  const want = part || 'p2';
   SIMON_LESSONS.lessons.forEach(function (L) {
+    if ((L.examPart || 'p2') !== want) return;
     (L.exercises || []).forEach(function (ex, i) {
       arr.push({ key: L.lessonNo + '#' + i, lesson: L, ex: ex });
     });
@@ -4869,26 +4888,38 @@ function simonFlatten() {
 
 function simonGetProg() {
   try { const p = JSON.parse(localStorage.getItem('simon_lesson_progress') || 'null'); if (p && p.done) return p; } catch (e) {}
-  return { done: {}, current: 0 };
+  return { done: {}, pos: {} };
 }
 function simonSaveProg(p) { try { localStorage.setItem('simon_lesson_progress', JSON.stringify(p)); } catch (e) {} }
 
+// 定位到某题并渲染；P1 短答默认展开示范答案方便跟读
+function simonGoto(idx) {
+  if (!simonList.length) return;
+  simonIdx = (idx + simonList.length) % simonList.length;
+  simonShowSample = simonCur().lesson.examPart === 'p1';
+  renderSimonTask();
+}
+
 function openSimonTask(preferKey) {
-  if (speakingPart !== 'p2') switchSpeakingPart('p2');
-  simonList = simonFlatten();
-  simonShowSample = false;
+  const targetPart = preferKey ? simonLessonKeyPart(preferKey) : speakingPart;
+  if (!simonHasLessonsFor(targetPart)) { alert('该 Part 暂无 Simon 示范任务'); return; }
+  if (speakingPart !== targetPart) switchSpeakingPart(targetPart);
+  simonTaskPart = targetPart;
+  simonList = simonFlatten(targetPart);
   if (!simonList.length) return;
   const p = simonGetProg();
-  // 有指定练习块（如 '4#0'）→ 跳到它；否则定位第一个未完成 / 上次位置
+  // 有指定练习块（如 '4#0'）→ 跳到它；否则定位第一个未完成 / 该场景上次位置
   const hit = preferKey ? simonList.findIndex(function (t) { return t.key === preferKey; }) : -1;
   if (hit >= 0) {
-    simonIdx = hit;
+    simonGoto(hit);
   } else {
     const firstUn = simonList.findIndex(function (t) { return !p.done[t.key]; });
-    const cur = (typeof p.current === 'number' && p.current >= 0 && p.current < simonList.length) ? p.current : 0;
-    simonIdx = firstUn >= 0 ? firstUn : cur;
+    if (firstUn >= 0) simonGoto(firstUn);
+    else {
+      const pos = (p.pos && p.pos[targetPart]) || 0;
+      simonGoto(Math.min(pos, simonList.length - 1));
+    }
   }
-  renderSimonTask();
   document.getElementById('simonTaskModal').classList.add('active');
 }
 
@@ -4913,30 +4944,29 @@ function simonToggleSample() { simonShowSample = !simonShowSample; renderSimonTa
 
 function simonNav(dir) {
   if (!simonList.length) return;
-  simonIdx = (simonIdx + dir + simonList.length) % simonList.length;
-  simonShowSample = false;
-  const p = simonGetProg(); p.current = simonIdx; simonSaveProg(p);
-  renderSimonTask();
+  simonGoto(simonIdx + dir);
+  const p = simonGetProg(); if (!p.pos) p.pos = {}; p.pos[simonTaskPart] = simonIdx; simonSaveProg(p);
 }
 
 function simonMarkDoneToggle() {
   const t = simonCur(); const p = simonGetProg();
   if (p.done[t.key]) delete p.done[t.key];
   else p.done[t.key] = 1;
-  p.current = simonIdx;
+  if (!p.pos) p.pos = {}; p.pos[simonTaskPart] = simonIdx;
   simonSaveProg(p);
   if (p.done[t.key]) {
     const next = simonList.findIndex(function (x, i) { return i !== simonIdx && !p.done[x.key]; });
-    if (next >= 0) { simonIdx = next; simonShowSample = false; }
+    if (next >= 0) simonGoto(next); else renderSimonTask();
+  } else {
+    renderSimonTask();
   }
-  renderSimonTask();
 }
 
 function simonResetAll() {
-  if (!confirm('确定清空全部 Simon 任务进度，重新开始吗？')) return;
-  simonSaveProg({ done: {}, current: 0 });
-  simonIdx = 0; simonShowSample = false;
-  renderSimonTask();
+  if (!confirm('确定清空本场景的 Simon 任务进度，重新开始吗？')) return;
+  const p = simonGetProg(); p.done = {}; p.pos = {};
+  simonSaveProg(p);
+  simonGoto(0);
 }
 
 // 填入"此题"到答题区
@@ -4962,6 +4992,22 @@ function simonPracticeReal() {
   document.getElementById('cueCardInput').focus();
 }
 
+// P1：把这题示范做成"单题问答会话"→ 逐题录音/文字 → 批量评分
+function simonPracticeP1() {
+  const t = simonCur();
+  if (speakingSession && speakingSession.items.some(function (it) { return it.answered; })) {
+    if (!confirm('当前 Part 1 会话还有已答内容，开始新的单题练习会清空它们。继续吗？')) return;
+  }
+  if (recState === REC_STATE.RECORDING || recState === REC_STATE.PAUSED) { alert('请先停止当前录音'); return; }
+  if (speakingPart !== 'p1') switchSpeakingPart('p1');
+  simonTaskClose();
+  const grp = {
+    id: 'simon-p1-' + t.key, name: 'Simon P1 示范', en: 'Simon Part 1',
+    questions: [t.ex.cue]
+  };
+  startSpeakingQASession(grp);
+}
+
 function simonWordBlock(title, arr, dim) {
   if (!arr || !arr.length) return '';
   return '<div class="simon-word-title">' + title + '</div><div class="simon-word-chips">' +
@@ -4973,7 +5019,8 @@ function renderSimonTask() {
   const body = document.getElementById('stBody');
   if (!body) return;
   const p = simonGetProg();
-  const doneCount = Object.keys(p.done).length;
+  let doneCount = 0;
+  simonList.forEach(function (t) { if (p.done[t.key]) doneCount++; });
   const total = simonList.length;
 
   document.getElementById('stProgText').textContent = '已完成 ' + doneCount + ' / ' + total + ' 个任务';
@@ -4996,7 +5043,7 @@ function renderSimonTask() {
 
   const t = simonCur();
   const L = t.lesson, ex = t.ex;
-  const isP1 = L.part === 'Part 1';
+  const isP1 = L.examPart === 'p1';
   const isDone = !!p.done[t.key];
 
   let html = '';
@@ -5011,7 +5058,7 @@ function renderSimonTask() {
   if (ex.points && ex.points.length) {
     html += '<ul class="simon-cue-pts">' + ex.points.map(function (pt) { return '<li>' + simonEsc(pt) + '</li>'; }).join('') + '</ul>';
   } else if (isP1) {
-    html += '<div style="font-size:12px;color:var(--text-tertiary);margin-top:-6px">Part 1 短问答 · 建议跟读示例记忆；如需逐题评分，请到口语工作区切「Part 1 · 问答」用题库作答。</div>';
+    html += '<div style="font-size:12px;color:var(--text-tertiary);margin-top:-6px">Part 1 短问答 · 先看下方 Simon 示例，再用「试答这题」自己答一遍并评分。</div>';
   }
 
   html += '<div class="simon-action-row">' +
@@ -5036,7 +5083,7 @@ function renderSimonTask() {
       '</div>';
   } else {
     html += '<div class="simon-action-row">' +
-      '<button class="simon-btn ghost" onclick="simonPracticeFill()">🔁 填入此题（可选）</button>' +
+      '<button class="simon-btn primary" onclick="simonPracticeP1()">🎤 试答这题（录音/文字 → 评分）</button>' +
       '<button class="simon-btn primary" style="background:var(--text-tertiary)" onclick="simonTaskClose()">关闭</button>' +
       '</div>';
   }

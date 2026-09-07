@@ -122,7 +122,7 @@ git push origin main
 | 写作结果视图 | `.grading-view` + `.tab` | 7 个 Tab |
 | 语音工作区 | `#speakingWorkspace` | Cue Card + 录音区 + Canvas 波形 + 结果视图 |
 | 口语题库 | `speaking-topics.js` + `speaking-qa-topics.js` + `#speakingTopicModal` | P2：2026.9-12 新题 Cue Card，分类卡片点选填入 textarea；P1/P3：话题组卡片点选启动答题队列 |
-| Simon 示范任务 | `simon-lessons.js` + `#simonTaskModal` | 跟学 Simon 示范 → 记好词 → 用此题/同类真题实战(接入现有录音评分) → 标记完成；进度存 `localStorage.simon_lesson_progress`（不区分身份） |
+| Simon 示范任务 | `simon-lessons.js` + `#simonTaskModal` | 按场景分流：P1 问答示范(lesson 2, examPart=p1)展开示例可「🎤 试答这题」→ 走 QA 单题录音/文字评分；P2 独白示范(lesson 3-7) → 填此题/同类真题 → 录音评分。进度 `localStorage.simon_lesson_progress`（done + 按场景 pos） |
 | 录音管理 | `AudioRecorder` 类 | start/pause/resume/stop/playback |
 | 音频分析 | `AudioAnalyzer` 类 | WPM/停顿检测/音量变化 |
 | 波形绘制 | `WaveformRenderer` 类 | Canvas 实时波形 |

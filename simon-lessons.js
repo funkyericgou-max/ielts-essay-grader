@@ -57,6 +57,7 @@ const SIMON_LESSONS = {
     {
       lessonNo: 2,
       part: "Part 1",
+      examPart: "p1",
       category: "Q&A 示例",
       title: "Part 1 问答示例",
       worksheet: "Speaking, lessen 2 - Part 1 worksheet",
@@ -87,6 +88,7 @@ const SIMON_LESSONS = {
     {
       lessonNo: 3,
       part: "Part 2",
+      examPart: "p2",
       category: "person",
       categoryZh: "人物",
       title: "Describe a person",
@@ -135,6 +137,7 @@ Why I think he's good: well, I think it comes from his work ethic. He's a really
     {
       lessonNo: 4,
       part: "Part 2",
+      examPart: "p2",
       category: "place",
       categoryZh: "地点",
       title: "Describe a place",
@@ -192,6 +195,7 @@ The reason I enjoyed eating in this restaurant: Firstly, it was a great chance t
     {
       lessonNo: 5,
       part: "Part 2",
+      examPart: "p2",
       category: "object",
       categoryZh: "物品",
       title: "Describe an object",
@@ -252,6 +256,7 @@ I also like the watch's stylish, elegant design; it's very simple, it's just a c
     {
       lessonNo: 6,
       part: "Part 2",
+      examPart: "p2",
       category: "event",
       categoryZh: "事件",
       title: "Describe an event",
@@ -348,6 +353,7 @@ A special Christmas family meal is an important part of the celebration for many
     {
       lessonNo: 7,
       part: "Part 2",
+      examPart: "p2",
       category: "activity",
       categoryZh: "活动",
       title: "Describe an activity",
