@@ -30,7 +30,7 @@ git push origin main
 # 仓库: https://github.com/funkyericgou-max/ielts-essay-grader
 ```
 
-没有构建工具、lint、测试套件。零依赖纯前端项目：1 个逻辑文件（`index.html`）+ 4 个数据文件（`vocabulary-data.js`、`phonetics-data.js`、`speaking-topics.js`、`simon-lessons.js`），其余数据（听力同义词对）仍以 JS 常量内联在 `index.html` 内。`simon-lessons.js` 为 Simon 口语课示范学习材料库，尚未接入 UI，供后续做「口语学习任务」取用。
+没有构建工具、lint、测试套件。零依赖纯前端项目：1 个逻辑文件（`index.html`）+ 4 个数据文件（`vocabulary-data.js`、`phonetics-data.js`、`speaking-topics.js`、`simon-lessons.js`），其余数据（听力同义词对）仍以 JS 常量内联在 `index.html` 内。`simon-lessons.js` 为 Simon 口语课示范学习材料库（v2.9 起已接入口语工作区「📖 Simon 示范任务」）。
 
 ## Architecture
 
@@ -113,6 +113,7 @@ git push origin main
 | 写作结果视图 | `.grading-view` + `.tab` | 7 个 Tab |
 | 语音工作区 | `#speakingWorkspace` | Cue Card + 录音区 + Canvas 波形 + 结果视图 |
 | 口语题库 | `speaking-topics.js` + `#speakingTopicModal` | 2026.9-12 新题 Part 2 Cue Card，分类卡片弹窗点选填入 textarea |
+| Simon 示范任务 | `simon-lessons.js` + `#simonTaskModal` | 跟学 Simon 示范 → 记好词 → 用此题/同类真题实战(接入现有录音评分) → 标记完成；进度存 `localStorage.simon_lesson_progress`（不区分身份） |
 | 录音管理 | `AudioRecorder` 类 | start/pause/resume/stop/playback |
 | 音频分析 | `AudioAnalyzer` 类 | WPM/停顿检测/音量变化 |
 | 波形绘制 | `WaveformRenderer` 类 | Canvas 实时波形 |

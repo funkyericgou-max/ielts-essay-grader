@@ -389,6 +389,35 @@
   .speaking-topic-card-en{font-size:12px;color:var(--text-secondary);line-height:1.5;margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   .speaking-topic-card-date{font-size:11px;color:var(--text-tertiary)}
 
+  /* ─── Simon Task Modal ─── */
+  .simon-task-box{width:760px;max-width:94vw;max-height:88vh;display:flex;flex-direction:column}
+  .simon-progress-row{display:flex;align-items:center;margin:2px 0 16px}
+  .simon-task-body{overflow-y:auto;padding-right:6px;min-height:0}
+  .simon-task-header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+  .simon-task-badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:12px;background:var(--accent);color:#fff}
+  .simon-task-badge.p1{background:var(--text-tertiary)}
+  .simon-task-title{font-size:17px;font-weight:700;font-family:var(--font-display);color:var(--text-primary)}
+  .simon-task-cue{margin:6px 0 14px;font-size:14px;line-height:1.7;color:var(--text-primary);background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;white-space:pre-wrap}
+  .simon-cue-pts{margin:4px 0 0;padding-left:18px;font-size:13px;color:var(--text-secondary);line-height:1.8}
+  .simon-action-row{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 6px}
+  .simon-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:var(--radius);font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s}
+  .simon-btn.primary{background:var(--accent);color:#fff}
+  .simon-btn.primary:hover{background:#234732}
+  .simon-btn.ghost{background:var(--surface-2);color:var(--text-secondary);border:1.5px solid var(--border)}
+  .simon-btn.ghost:hover{background:var(--border);color:var(--text-primary)}
+  .simon-btn.solid{background:var(--correct);color:#fff}
+  .simon-btn.disabled{opacity:.5;pointer-events:none}
+  .simon-sample-toggle{cursor:pointer;color:var(--accent);font-weight:600;font-size:13px;background:none;border:none;padding:0}
+  .simon-sample{white-space:pre-wrap;font-size:13.5px;line-height:1.85;color:var(--text-primary);background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:16px 18px;margin:12px 0}
+  .simon-note{font-size:12.5px;color:var(--text-secondary);line-height:1.7;background:rgba(241,196,15,.07);border-left:3px solid #f1c40f;border-radius:0 var(--radius) var(--radius) 0;padding:10px 14px;margin:10px 0}
+  .simon-word-title{font-size:12px;font-weight:600;color:var(--text-secondary);margin:12px 0 6px}
+  .simon-word-chips{display:flex;flex-wrap:wrap;gap:6px}
+  .simon-word-chip{padding:4px 12px;border-radius:14px;font-size:12.5px;background:rgba(39,174,96,.1);color:#1e8449;border:1px solid rgba(39,174,96,.25)}
+  .simon-word-chip.dim{background:var(--surface-2);color:var(--text-tertiary);border:1px solid var(--border)}
+  .simon-nav-row{display:flex;justify-content:space-between;gap:10px;margin-top:16px;align-items:center}
+  .simon-done-banner{text-align:center;padding:30px 16px;font-size:15px;color:var(--text-primary)}
+  .simon-done-banner .big{font-size:34px;margin-bottom:10px}
+
   /* ─── Fallback ─── */
   .fallback-box{
     background:rgba(192,57,43,.04);border:1px solid rgba(192,57,43,.2);border-radius:var(--radius-lg);
@@ -1137,7 +1166,10 @@
       <div class="form-group">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
           <label style="margin:0">Cue Card 题目 / 话题卡</label>
-          <button class="btn btn-outline" onclick="openSpeakingTopicBank()" style="padding:6px 14px;font-size:12px;flex-shrink:0">📚 口语题库</button>
+          <div style="display:flex;gap:8px;flex-shrink:0">
+            <button class="btn btn-outline" onclick="openSimonTask()" style="padding:6px 14px;font-size:12px">📖 Simon 示范任务</button>
+            <button class="btn btn-outline" onclick="openSpeakingTopicBank()" style="padding:6px 14px;font-size:12px">📚 口语题库</button>
+          </div>
         </div>
         <textarea id="cueCardInput" style="background:var(--surface);border:1.5px solid var(--border);font-family:var(--font-body);font-size:13px;line-height:1.7;resize:vertical;padding:12px;border-radius:var(--radius);width:100%;min-height:100px" placeholder="Describe a memorable trip you have taken. You should say: where you went, who you went with, what you did there, and explain why it was memorable."></textarea>
       </div>
@@ -1498,13 +1530,30 @@
   </div>
 </div>
 
+<!-- Simon 示范任务弹窗 -->
+<div class="modal-overlay" id="simonTaskModal" onclick="if(event.target===this)simonTaskClose()">
+  <div class="modal-box simon-task-box">
+    <div class="modal-title">📖 Simon 示范任务 <span style="font-size:12px;font-weight:400;color:var(--text-tertiary)">前雅思考官示范 · 跟学 → 换题实战 → 标记完成</span></div>
+    <div class="simon-progress-row">
+      <div style="font-size:12px;color:var(--text-secondary);margin-bottom:6px" id="stProgText"></div>
+      <div class="vocab-progress" style="margin-bottom:0;flex:1;margin-right:12px"><div class="vocab-progress-fill" id="stProgFill" style="width:0%"></div></div>
+      <span style="font-size:12px;color:var(--text-tertiary);flex-shrink:0" id="stProgCount"></span>
+    </div>
+    <div class="simon-task-body" id="stBody"></div>
+    <div class="modal-btn-row">
+      <button class="btn btn-secondary" onclick="simonTaskClose()">关闭</button>
+    </div>
+  </div>
+</div>
+
 <script src="vocabulary-data.js"></script>
 <script src="phonetics-data.js"></script>
 <script src="speaking-topics.js"></script>
+<script src="simon-lessons.js"></script>
 <script>
 // ══════════════════════════════════════════════════════════════
 // CONFIG & STATE
-const APP_VERSION = '2.8.2'; // + SPEAKING_DESCRIPTORS 按剑桥官方 Band Descriptors 逐字校准(补B3/B0-2)
+const APP_VERSION = '2.9.0'; // + Simon 示范任务：跟学示范→记好词→用此题/同类真题实战→标记完成(进度存档)
 // ══════════════════════════════════════════════════════════════
 let currentTaskType = 'task2'; // 'task1' or 'task2'
 let gradingResult = null;
@@ -4017,6 +4066,207 @@ function selectSpeakingTopic(catId, idx) {
   document.getElementById('cueCardInput').value = cat.topics[idx].cue;
   closeSpeakingTopicBank();
   document.getElementById('cueCardInput').focus();
+}
+
+// ══════════════════════════════════════════════════════════════
+// SPEAKING: SIMON TASK (示范学习任务)
+// 流程：看 Simon 示范 → 记好词 → 用此题/同类真题实战 → 标记完成
+// 进度存 localStorage.simon_lesson_progress（不区分身份）
+// ══════════════════════════════════════════════════════════════
+let simonList = [];
+let simonIdx = 0;
+let simonShowSample = false;
+// Simon 课类型 → 口语题库分类映射（换同类真题用）
+const SIMON_CAT2TOPIC = { person: 'people', place: 'places', object: 'things', event: 'events', activity: 'events' };
+
+function simonEsc(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function simonFlatten() {
+  const arr = [];
+  SIMON_LESSONS.lessons.forEach(function (L) {
+    (L.exercises || []).forEach(function (ex, i) {
+      arr.push({ key: L.lessonNo + '#' + i, lesson: L, ex: ex });
+    });
+  });
+  return arr;
+}
+
+function simonGetProg() {
+  try { const p = JSON.parse(localStorage.getItem('simon_lesson_progress') || 'null'); if (p && p.done) return p; } catch (e) {}
+  return { done: {}, current: 0 };
+}
+function simonSaveProg(p) { try { localStorage.setItem('simon_lesson_progress', JSON.stringify(p)); } catch (e) {} }
+
+function openSimonTask() {
+  simonList = simonFlatten();
+  simonShowSample = false;
+  if (!simonList.length) return;
+  const p = simonGetProg();
+  let cur = (typeof p.current === 'number' && p.current >= 0 && p.current < simonList.length) ? p.current : 0;
+  // 默认定位到第一个未完成
+  const firstUn = simonList.findIndex(function (t) { return !p.done[t.key]; });
+  simonIdx = firstUn >= 0 ? firstUn : cur;
+  renderSimonTask();
+  document.getElementById('simonTaskModal').classList.add('active');
+}
+
+function simonTaskClose() {
+  document.getElementById('simonTaskModal').classList.remove('active');
+}
+
+function simonCur() { return simonList[simonIdx]; }
+
+function simonTaskListLength() { return simonList.length; }
+
+function simonCueText(ex) {
+  let txt = ex.cue;
+  if (ex.points && ex.points.length) {
+    txt += '\nYou should say:';
+    ex.points.forEach(function (pt) { txt += '\n- ' + pt; });
+  }
+  return txt;
+}
+
+function simonToggleSample() { simonShowSample = !simonShowSample; renderSimonTask(); }
+
+function simonNav(dir) {
+  if (!simonList.length) return;
+  simonIdx = (simonIdx + dir + simonList.length) % simonList.length;
+  simonShowSample = false;
+  const p = simonGetProg(); p.current = simonIdx; simonSaveProg(p);
+  renderSimonTask();
+}
+
+function simonMarkDoneToggle() {
+  const t = simonCur(); const p = simonGetProg();
+  if (p.done[t.key]) delete p.done[t.key];
+  else p.done[t.key] = 1;
+  p.current = simonIdx;
+  simonSaveProg(p);
+  if (p.done[t.key]) {
+    const next = simonList.findIndex(function (x, i) { return i !== simonIdx && !p.done[x.key]; });
+    if (next >= 0) { simonIdx = next; simonShowSample = false; }
+  }
+  renderSimonTask();
+}
+
+function simonResetAll() {
+  if (!confirm('确定清空全部 Simon 任务进度，重新开始吗？')) return;
+  simonSaveProg({ done: {}, current: 0 });
+  simonIdx = 0; simonShowSample = false;
+  renderSimonTask();
+}
+
+// 填入"此题"到答题区
+function simonPracticeFill() {
+  const t = simonCur();
+  document.getElementById('cueCardInput').value = simonCueText(t.ex);
+  simonTaskClose();
+  document.getElementById('cueCardInput').focus();
+}
+
+// 随机换一道同类真题（把 25 道题库里的题喂给示范所练类型）
+function simonPracticeReal() {
+  const t = simonCur();
+  const cid = SIMON_CAT2TOPIC[t.lesson.category];
+  if (!cid) return;
+  const cat = SPEAKING_TOPIC_CATEGORIES.find(function (c) { return c.id === cid; });
+  if (!cat || !cat.topics.length) return;
+  const tp = cat.topics[Math.floor(Math.random() * cat.topics.length)];
+  document.getElementById('cueCardInput').value = tp.cue + (tp.zh ? '\n（同类真题：' + tp.zh + '）' : '');
+  simonTaskClose();
+  document.getElementById('cueCardInput').focus();
+}
+
+function simonWordBlock(title, arr, dim) {
+  if (!arr || !arr.length) return '';
+  return '<div class="simon-word-title">' + title + '</div><div class="simon-word-chips">' +
+    arr.map(function (w) { return '<span class="simon-word-chip' + (dim ? ' dim' : '') + '">' + simonEsc(w) + '</span>'; }).join('') +
+    '</div>';
+}
+
+function renderSimonTask() {
+  const body = document.getElementById('stBody');
+  if (!body) return;
+  const p = simonGetProg();
+  const doneCount = Object.keys(p.done).length;
+  const total = simonList.length;
+
+  document.getElementById('stProgText').textContent = '已完成 ' + doneCount + ' / ' + total + ' 个任务';
+  document.getElementById('stProgFill').style.width = total ? Math.round(doneCount / total * 100) + '%' : '0%';
+  document.getElementById('stProgCount').textContent = (simonIdx + 1) + ' / ' + total;
+
+  // 全部完成 → 庆祝横幅
+  if (doneCount >= total) {
+    body.innerHTML =
+      '<div class="simon-done-banner"><div class="big">🎉</div><div>恭喜！全部 ' + total + ' 个 Simon 示范任务已完成</div>' +
+      '<div style="font-size:12px;color:var(--text-tertiary);margin:12px 0 18px">仍可翻看复习，或用下方按钮重开进度。</div>' +
+      '<button class="simon-btn ghost" onclick="simonResetAll()">🔄 重新开始全部任务</button></div>' +
+      '<div class="simon-nav-row">' +
+      '<button class="simon-btn ghost" onclick="simonNav(-1)">← 上一题</button>' +
+      '<div></div>' +
+      '<button class="simon-btn ghost" onclick="simonNav(1)">下一题 →</button>' +
+      '</div>';
+    return;
+  }
+
+  const t = simonCur();
+  const L = t.lesson, ex = t.ex;
+  const isP1 = L.part === 'Part 1';
+  const isDone = !!p.done[t.key];
+
+  let html = '';
+  html += '<div class="simon-task-header">' +
+    '<span class="simon-task-badge' + (isP1 ? ' p1' : '') + '">' + simonEsc(L.part) + '</span>' +
+    (L.categoryZh ? '<span class="simon-task-badge p1" style="background:#7d3c98">' + simonEsc(L.categoryZh) + '</span>' : '') +
+    '<span style="margin-left:auto;font-size:12px;color:var(--text-tertiary)">Lesson ' + L.lessonNo + '</span>' +
+    (isDone ? '<span style="color:var(--correct);font-weight:600;font-size:12px">✓ 已完成</span>' : '') +
+    '</div>';
+
+  html += '<div class="simon-task-cue">' + simonEsc(ex.cue) + '</div>';
+  if (ex.points && ex.points.length) {
+    html += '<ul class="simon-cue-pts">' + ex.points.map(function (pt) { return '<li>' + simonEsc(pt) + '</li>'; }).join('') + '</ul>';
+  } else if (isP1) {
+    html += '<div style="font-size:12px;color:var(--text-tertiary);margin-top:-6px">Part 1 短问答 · 建议跟读示例为主（本工具录音评分为 Part 2 独白）。</div>';
+  }
+
+  html += '<div class="simon-action-row">' +
+    '<button class="simon-btn ghost" onclick="simonToggleSample()">' + (simonShowSample ? '▲ 收起' : '▼ 展开') + ' Simon 示范' + (ex.sample ? '' : '（无正文）') + '</button>' +
+    '</div>';
+
+  if (simonShowSample) {
+    if (ex.sample) html += '<div class="simon-sample">' + simonEsc(ex.sample) + '</div>';
+    if (ex.sourceMaterial) html += '<div class="simon-word-title">📄 参考素材</div><div class="simon-sample">' + simonEsc(ex.sourceMaterial) + '</div>';
+    html += simonWordBlock('⭐ 考官会注意的好词', ex.highlights, false);
+    html += simonWordBlock('✏️ 二稿可加的好词', ex.improveWith, true);
+    if (ex.notes && ex.notes.length) {
+      html += ex.notes.map(function (n) { return '<div class="simon-note">📌 ' + simonEsc(n) + '</div>'; }).join('');
+    }
+  }
+
+  if (!isP1) {
+    html += '<div class="simon-action-row">' +
+      '<button class="simon-btn primary" onclick="simonPracticeFill()">🎤 用此题练习</button>' +
+      '<button class="simon-btn ghost" onclick="simonPracticeReal()">🎯 换同类真题练</button>' +
+      '<button class="simon-btn primary" style="background:var(--text-tertiary)" onclick="simonTaskClose()">关闭</button>' +
+      '</div>';
+  } else {
+    html += '<div class="simon-action-row">' +
+      '<button class="simon-btn ghost" onclick="simonPracticeFill()">🔁 填入此题（可选）</button>' +
+      '<button class="simon-btn primary" style="background:var(--text-tertiary)" onclick="simonTaskClose()">关闭</button>' +
+      '</div>';
+  }
+
+  html += '<div class="simon-nav-row">' +
+    '<button class="simon-btn ghost" onclick="simonNav(-1)">← 上一题</button>' +
+    '<button class="simon-btn ' + (isDone ? 'ghost' : 'solid') + '" onclick="simonMarkDoneToggle()">' + (isDone ? '↩ 撤销完成' : '✓ 标记完成') + '</button>' +
+    '<button class="simon-btn ghost" onclick="simonNav(1)">下一题 →</button>' +
+    '</div>';
+
+  body.innerHTML = html;
+  body.scrollTop = 0;
 }
 
 // ══════════════════════════════════════════════════════════════
