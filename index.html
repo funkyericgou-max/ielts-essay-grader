@@ -3458,9 +3458,13 @@ function updateRecButtons() {
       playBtn.onclick = isPlayingBack ? stopPlayback : playbackRecording;
       clearBtn.style.display = '';
       navRow.classList.add('qa-visible');
-      document.getElementById('qaPrimaryBtn').textContent = qaIsLast() ? '📤 完成并提交评分' : '下一题 ▶';
+      const qaPrimary = document.getElementById('qaPrimaryBtn');
+      qaPrimary.style.display = '';
+      qaPrimary.textContent = qaIsLast() ? '📤 完成并提交评分' : '下一题 ▶';
     } else {
       navRow.classList.remove('qa-visible');
+      const qaPrimary = document.getElementById('qaPrimaryBtn');
+      if (qaPrimary) qaPrimary.style.display = 'none';
     }
   } else if (navRow) {
     navRow.classList.remove('qa-visible');
