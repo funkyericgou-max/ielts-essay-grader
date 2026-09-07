@@ -445,6 +445,15 @@
   .simon-done-banner{text-align:center;padding:30px 16px;font-size:15px;color:var(--text-primary)}
   .simon-done-banner .big{font-size:34px;margin-bottom:10px}
 
+  /* ─── P2 答题思路卡 ─── */
+  .idea-tip{background:rgba(39,174,96,.05);border:1px dashed rgba(39,174,96,.35);border-radius:var(--radius);padding:12px 14px;margin-top:10px;font-size:13px;animation:fadeIn .25s ease both}
+  .idea-tip-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+  .idea-tip-type{font-weight:700;font-family:var(--font-display);font-size:14px;color:var(--text-primary)}
+  .idea-tip-go{margin-left:auto;font-size:12px;font-weight:600;color:var(--accent);cursor:pointer;background:none;border:none;padding:0}
+  .idea-tip-go:hover{text-decoration:underline}
+  .idea-tip-note{font-size:12px;color:var(--text-secondary);line-height:1.7;margin-top:8px;border-top:1px dashed rgba(39,174,96,.2);padding-top:8px}
+  .idea-tip .simon-word-chip{font-size:12px;padding:3px 11px}
+
   /* ─── Fallback ─── */
   .fallback-box{
     background:rgba(192,57,43,.04);border:1px solid rgba(192,57,43,.2);border-radius:var(--radius-lg);
@@ -1207,8 +1216,10 @@
               <button class="btn btn-outline" onclick="openSpeakingTopicBank('p2')" style="padding:6px 14px;font-size:12px">📚 口语题库</button>
             </div>
           </div>
-          <textarea id="cueCardInput" style="background:var(--surface);border:1.5px solid var(--border);font-family:var(--font-body);font-size:13px;line-height:1.7;resize:vertical;padding:12px;border-radius:var(--radius);width:100%;min-height:100px" placeholder="Describe a memorable trip you have taken. You should say: where you went, who you went with, what you did there, and explain why it was memorable."></textarea>
+          <textarea id="cueCardInput" oninput="document.getElementById('spIdeaTip').style.display='none'" style="background:var(--surface);border:1.5px solid var(--border);font-family:var(--font-body);font-size:13px;line-height:1.7;resize:vertical;padding:12px;border-radius:var(--radius);width:100%;min-height:100px" placeholder="Describe a memorable trip you have taken. You should say: where you went, who you went with, what you did there, and explain why it was memorable."></textarea>
         </div>
+        <!-- 答题思路卡（题库选题后显示）：同类型 Simon 骨架 + 高分词 -->
+        <div id="spIdeaTip" style="display:none"></div>
       </div>
 
       <!-- Part 1 / 3: QA 答题队列面板（选择话题组后显示） -->
@@ -1618,7 +1629,7 @@
 <script>
 // ══════════════════════════════════════════════════════════════
 // CONFIG & STATE
-const APP_VERSION = '2.9.0'; // + Simon 示范任务：跟学示范→记好词→用此题/同类真题实战→标记完成(进度存档)
+const APP_VERSION = '2.10.0'; // + 口语三场景 P1/P2/P3 (v5) + P2 答题思路卡(题库选题→同类型Simon高分词+跳完整示范)
 // ══════════════════════════════════════════════════════════════
 let currentTaskType = 'task2'; // 'task1' or 'task2'
 let gradingResult = null;
@@ -4788,8 +4799,43 @@ function selectSpeakingTopic(catId, idx) {
   if (!cat || !cat.topics || !cat.topics[idx]) return;
   if (speakingPart !== 'p2') switchSpeakingPart('p2');
   document.getElementById('cueCardInput').value = cat.topics[idx].cue;
+  showP2IdeaTip(cat.id);
   closeSpeakingTopicBank();
   document.getElementById('cueCardInput').focus();
+}
+
+// ══════════════════════════════════════════════════════════════
+// SPEAKING: P2 答题思路卡（Step1）
+// 从题库选真题 → 在题面下方给出：该类型怎么讲 + Simon 高分词 + 跳完整示范
+// ══════════════════════════════════════════════════════════════
+// 题库分类 → 对应 Simon 示范课（取该课第一个练习块作参考）
+const SIMON_P2_IDEA_LESSON = { people: 3, places: 4, things: 5, events: 6 };
+
+function showP2IdeaTip(catId) {
+  const tip = document.getElementById('spIdeaTip');
+  if (!tip) return;
+  const lessonNo = SIMON_P2_IDEA_LESSON[catId];
+  const L = SIMON_LESSONS.lessons.find(function (x) { return x.lessonNo === lessonNo; });
+  if (!L || !L.exercises || !L.exercises.length) { tip.style.display = 'none'; return; }
+  const ex = L.exercises[0];
+  const words = [].concat(ex.highlights || [], ex.improveWith || []).slice(0, 14);
+  let html = '<div class="idea-tip">';
+  html += '<div class="idea-tip-head">' +
+    '<span class="idea-tip-type">💡 ' + simonEsc(L.categoryZh || L.category) + ' · 怎么讲 & 高分词</span>' +
+    '<span style="font-size:12px;color:var(--text-tertiary)">Simon Lesson ' + L.lessonNo + ' 示范</span>' +
+    '<button class="idea-tip-go" onclick="openSimonTask(\'' + L.lessonNo + '#0\')">▶ 看完整示范 →</button>' +
+    '</div>';
+  if (words.length) {
+    html += '<div class="simon-word-chips">' + words.map(function (w) {
+      return '<span class="simon-word-chip">' + simonEsc(w) + '</span>';
+    }).join('') + '</div>';
+  }
+  if (ex.notes && ex.notes.length) {
+    html += '<div class="idea-tip-note">📌 ' + simonEsc(ex.notes[0]) + '</div>';
+  }
+  html += '</div>';
+  tip.innerHTML = html;
+  tip.style.display = 'block';
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -4823,16 +4869,21 @@ function simonGetProg() {
 }
 function simonSaveProg(p) { try { localStorage.setItem('simon_lesson_progress', JSON.stringify(p)); } catch (e) {} }
 
-function openSimonTask() {
+function openSimonTask(preferKey) {
   if (speakingPart !== 'p2') switchSpeakingPart('p2');
   simonList = simonFlatten();
   simonShowSample = false;
   if (!simonList.length) return;
   const p = simonGetProg();
-  let cur = (typeof p.current === 'number' && p.current >= 0 && p.current < simonList.length) ? p.current : 0;
-  // 默认定位到第一个未完成
-  const firstUn = simonList.findIndex(function (t) { return !p.done[t.key]; });
-  simonIdx = firstUn >= 0 ? firstUn : cur;
+  // 有指定练习块（如 '4#0'）→ 跳到它；否则定位第一个未完成 / 上次位置
+  const hit = preferKey ? simonList.findIndex(function (t) { return t.key === preferKey; }) : -1;
+  if (hit >= 0) {
+    simonIdx = hit;
+  } else {
+    const firstUn = simonList.findIndex(function (t) { return !p.done[t.key]; });
+    const cur = (typeof p.current === 'number' && p.current >= 0 && p.current < simonList.length) ? p.current : 0;
+    simonIdx = firstUn >= 0 ? firstUn : cur;
+  }
   renderSimonTask();
   document.getElementById('simonTaskModal').classList.add('active');
 }
