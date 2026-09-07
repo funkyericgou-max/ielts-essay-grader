@@ -16,6 +16,8 @@ IELTS AI Grader — AI 驱动的雅思写作 + 口语 + 听力 + 背单词四模
 
 **v4.3 已包含**：单词朗读——闪卡正面 🔊 按钮 + 侧边栏「自动朗读」开关，用浏览器内置 TTS（`speechSynthesis`）零下载朗读单词。
 
+**v5 已包含**：口语三场景拆分——口语工作区顶部可切换 **Part 1（面试问答）/ Part 2（Cue Card 独白，行为不变）/ Part 3（抽象讨论）**。Part 1/3 用「一题一录」答题队列：选一组题（`speaking-qa-topics.js` 题库）→ 逐题短录音或文字作答 → 全部答完**一次批量** Groq 转写 + **一次** DeepSeek 综合评分（合并 Q/A 转写，FC/LR/GRA/P 给整场一次综合分）。评分 System/User Prompt、`task_type`、结果概览标签与可见 Tab（P1/P3 隐藏「升级示范」）均按 Part 动态配置（`SPEAKING_PART_CONFIG`）；录音上限按 Part（P1 60s / P2 300s / P3 120s）。
+
 ## Commands
 
 ```bash
@@ -30,7 +32,7 @@ git push origin main
 # 仓库: https://github.com/funkyericgou-max/ielts-essay-grader
 ```
 
-没有构建工具、lint、测试套件。零依赖纯前端项目：1 个逻辑文件（`index.html`）+ 4 个数据文件（`vocabulary-data.js`、`phonetics-data.js`、`speaking-topics.js`、`simon-lessons.js`），其余数据（听力同义词对）仍以 JS 常量内联在 `index.html` 内。`simon-lessons.js` 为 Simon 口语课示范学习材料库（v2.9 起已接入口语工作区「📖 Simon 示范任务」）。
+没有构建工具、lint、测试套件。零依赖纯前端项目：1 个逻辑文件（`index.html`）+ 5 个数据文件（`vocabulary-data.js`、`phonetics-data.js`、`speaking-topics.js`、`speaking-qa-topics.js`、`simon-lessons.js`），其余数据（听力同义词对）仍以 JS 常量内联在 `index.html` 内。`simon-lessons.js` 为 Simon 口语课示范学习材料库（v2.9 起已接入口语工作区「📖 Simon 示范任务」）；`speaking-qa-topics.js` 为口语 Part 1 / Part 3 话题组题库（v5 起接入三场景答题队列）。
 
 ## Architecture
 
@@ -56,24 +58,31 @@ git push origin main
   → innerHTML 渲染 annotated_essay + 填充 7 个 Tab + 侧边栏
 ```
 
-### 数据流 — 口语
+### 数据流 — 口语（Part 2 单段 / Part 1/3 多题两态）
 
 ```
-用户录音 (MediaRecorder API, WebM Opus)
-  ├─→ 前端音频分析 (Web Audio API): WPM / 停顿 / 音量变化
-  └─→ Groq Whisper API (免费 STT): audioBlob → 转写文本
-          │
-          ▼
-     前端文本分析: 填充词 / 自我纠正 / TTR / 平均句长
-          │
-          ▼
-     JS 动态组装口语 System Prompt + User Prompt (含音频元数据)
-          │
-          ▼
-     DeepSeek Chat API (temperature=0.3)
-          │
-          ▼
-     前端渲染: 侧边栏(FC/LR/GRA/P) + 6 Tab (含流利度可视化图表)
+入口选择 Part (P1问答 | P2独白 | P3讨论) → 按 Part 显隐 题面输入/答题队列
+        │
+        ├─ P2 单段: 输入 Cue Card → 录一段 1-2 min
+        └─ P1/P3 队列: 📚题库选话题组(speaking-qa-topics.js) → 逐题「一题一录」
+              每停止一题写入 item{audioBlob,url|manualText,answered} → 全答完
+        │
+        ▼
+   (P2) 单段 analyzeAudio + Groq Whisper
+   (P1/P3) 逐题 analyzeAudio + Groq Whisper → 合并 Q/A 转写 + aggregateSessionMeta
+        │
+        ▼
+     前端文本分析: 填充词 / 自我纠正 / TTR / 平均句长（答案拼接文本）
+        │
+        ▼
+     buildSpeakingSystemPrompt(part) / UserPrompt(part) —— task_type/时长期望/
+     量化阈值/是否升级范文 全按 SPEAKING_PART_CONFIG[part] 注入
+        │
+        ▼
+     DeepSeek Chat API (temperature=0.3) 一次评分 → parseResponse
+        │
+        ▼
+     前端渲染: 概览标签按 Part + 可见 Tab(applySpeakingTabs) + 转写批注 + 侧栏
 ```
 
 ### 数据流 — 听力（纯客户端，零 API）
@@ -112,15 +121,19 @@ git push origin main
 | 写作输入面板 | `#inputPanel` | Task Toggle + 题目/作文 textarea + 字数警告 |
 | 写作结果视图 | `.grading-view` + `.tab` | 7 个 Tab |
 | 语音工作区 | `#speakingWorkspace` | Cue Card + 录音区 + Canvas 波形 + 结果视图 |
-| 口语题库 | `speaking-topics.js` + `#speakingTopicModal` | 2026.9-12 新题 Part 2 Cue Card，分类卡片弹窗点选填入 textarea |
+| 口语题库 | `speaking-topics.js` + `speaking-qa-topics.js` + `#speakingTopicModal` | P2：2026.9-12 新题 Cue Card，分类卡片点选填入 textarea；P1/P3：话题组卡片点选启动答题队列 |
 | Simon 示范任务 | `simon-lessons.js` + `#simonTaskModal` | 跟学 Simon 示范 → 记好词 → 用此题/同类真题实战(接入现有录音评分) → 标记完成；进度存 `localStorage.simon_lesson_progress`（不区分身份） |
 | 录音管理 | `AudioRecorder` 类 | start/pause/resume/stop/playback |
 | 音频分析 | `AudioAnalyzer` 类 | WPM/停顿检测/音量变化 |
 | 波形绘制 | `WaveformRenderer` 类 | Canvas 实时波形 |
 | STT 调用 | `callGroqWhisper()` | FormData 上传音频 → 转写文本 |
 | API 调用 | `callDeepSeekAPI()` | 写作 + 口语共用，fetch → 正则去噪 → JSON.parse → fallback |
-| Prompt 组装 | `buildSystemPrompt()` / `buildSpeakingSystemPrompt()` | 动态注入 Band Descriptors + 量化指标 |
-| 渲染 | `renderResults()` / `renderSpeakingResults()` | 填充侧边栏 + 各 Tab |
+| Prompt 组装 | `buildSystemPrompt()` / `buildSpeakingSystemPrompt(part)` | 动态注入 Band Descriptors + 量化指标；口语按 Part 注入 task_type/时长期望/阈值 |
+| 渲染 | `renderResults()` / `renderSpeakingResult()` | 填充侧边栏 + 各 Tab（口语 `applySpeakingTabs(part)` 控制可见 Tab） |
+| 口语三场景 | `#spPartToggle` + `switchSpeakingPart()` / `SPEAKING_PART_CONFIG` | 顶部 P1/P2/P3 分段切换，`speakingPart` 全局状态驱动输入形态/录音上限/Prompt |
+| P1/P3 答题队列 | `startSpeakingQASession()` / `renderQaSession()` / `finishSpeakingQASession()` | 逐题一题一录（音频 `item.audioBlob` 或文字 `item.manualText`）→ `runSpeakingQASessionGrading()` 批量转写+一次评分 |
+| P1/P3 题库 | `speaking-qa-topics.js` | `SPEAKING_PART1_TOPICS`（6 话题组）/ `SPEAKING_PART3_TOPICS`（6 主题组），各 4 题/组 |
+| 题库弹窗 | `#speakingTopicModal` + `openSpeakingTopicBank(part)` | p2 分类 Cue Card 网格；p1/p3 话题组卡片，点选后启动答题队列 |
 | 设置弹窗 | `#apiKeyModal` | DeepSeek Key + Groq Key |
 | 听力工作区 | `#listeningWorkspace` | 大纲展示 + 游戏模式，纯客户端，零 API |
 | 同义词数据 | `LISTENING_CATEGORIES` / `LISTENING_TRAP_GROUPS` | 115 组同义词对嵌入为 JS 常量 |

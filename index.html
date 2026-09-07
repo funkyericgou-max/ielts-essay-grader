@@ -126,6 +126,33 @@
   .task-btn:hover{color:var(--text-secondary)}
   .task-btn.active{background:var(--accent);color:#fff}
 
+  /* ─── Speaking Part segmented toggle ─── */
+  .sp-part-toggle{display:flex;gap:0;margin:0 0 16px;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;width:fit-content;background:var(--surface-2)}
+  .sp-part-btn{
+    padding:8px 18px;font-size:13px;font-weight:500;cursor:pointer;
+    border:none;background:transparent;color:var(--text-tertiary);transition:all .15s;
+  }
+  .sp-part-btn:hover{color:var(--text-secondary)}
+  .sp-part-btn.active{background:var(--accent);color:#fff}
+
+  /* ─── QA (Part 1/3) 答题队列面板 ─── */
+  .qa-session-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+  .qa-session-topic{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:16px;background:var(--surface-2);border:1px solid var(--border);font-size:13px;font-weight:600;color:var(--text-primary)}
+  .qa-step-progress{font-size:13px;font-weight:600;color:var(--accent);font-family:var(--font-mono)}
+  .qa-question-card{border:1.5px solid var(--border);border-radius:var(--radius);background:var(--surface-2);padding:14px 16px;margin-bottom:12px}
+  .qa-question-text{font-size:15px;line-height:1.7;color:var(--text-primary);font-weight:500}
+  .qa-progress-chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 14px}
+  .qa-chip{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;border:1.5px solid var(--border);background:var(--surface);color:var(--text-tertiary);flex-shrink:0}
+  .qa-chip.current{border-color:var(--accent);color:var(--accent)}
+  .qa-chip.done{border-color:var(--correct);background:var(--correct);color:#fff}
+  .qa-chip.empty{color:var(--text-tertiary)}
+  .qa-nav-row{display:none;gap:10px;align-items:center;margin-top:8px}
+  .qa-nav-row.qa-visible{display:flex}
+  .qa-mode-row{display:flex;gap:0;margin-top:10px;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;width:fit-content;background:var(--surface)}
+  .qa-mode-btn{padding:5px 14px;font-size:12px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--text-tertiary);transition:all .12s}
+  .qa-mode-btn:hover{color:var(--text-secondary)}
+  .qa-mode-btn.active{background:var(--accent);color:#fff}
+
   /* ─── Input panel ─── */
   .input-panel{
     background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
@@ -825,8 +852,8 @@
       <div class="home-card-name">Speaking · 口语批改</div>
       <div class="home-card-desc">录制口语回答，AI 从 FC/LR/GRA/P 四维度评分并分析流利度与发音。</div>
       <div class="home-card-features">
-        <span class="home-card-feat">Part 2 Cue Card</span>
-        <span class="home-card-feat">语音转写</span>
+        <span class="home-card-feat">Part 1/2/3 全覆盖</span>
+        <span class="home-card-feat">逐题录音</span>
         <span class="home-card-feat">流利度分析</span>
       </div>
       <button class="home-card-btn speaking">开始口语 →</button>
@@ -1161,24 +1188,57 @@
     <!-- Speaking Input Panel -->
     <div class="input-panel animate-in" id="speakingInputPanel">
       <h2>🎙️ 录音回答，AI 评估发音与流利度</h2>
-      <p class="hint">输入 Cue Card 题目，录制你的口语回答，AI 考官将从四个维度评分</p>
+      <p class="hint" id="spPanelHint">输入 Cue Card 题目，录制你的口语回答，AI 考官将从四个维度评分</p>
 
-      <div class="form-group">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <label style="margin:0">Cue Card 题目 / 话题卡</label>
-          <div style="display:flex;gap:8px;flex-shrink:0">
-            <button class="btn btn-outline" onclick="openSimonTask()" style="padding:6px 14px;font-size:12px">📖 Simon 示范任务</button>
-            <button class="btn btn-outline" onclick="openSpeakingTopicBank()" style="padding:6px 14px;font-size:12px">📚 口语题库</button>
+      <!-- Part segmented toggle: Part 1 / Part 2 / Part 3 -->
+      <div class="sp-part-toggle" id="spPartToggle">
+        <button class="sp-part-btn" data-part="p1" onclick="switchSpeakingPart('p1')">Part 1 · 问答</button>
+        <button class="sp-part-btn active" data-part="p2" onclick="switchSpeakingPart('p2')">Part 2 · 独白</button>
+        <button class="sp-part-btn" data-part="p3" onclick="switchSpeakingPart('p3')">Part 3 · 讨论</button>
+      </div>
+
+      <!-- Part 2: Cue Card input -->
+      <div id="cueInputGroup">
+        <div class="form-group">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <label style="margin:0" id="spCueLabel">Cue Card 题目 / 话题卡</label>
+            <div style="display:flex;gap:8px;flex-shrink:0">
+              <button class="btn btn-outline" onclick="openSimonTask()" style="padding:6px 14px;font-size:12px">📖 Simon 示范任务</button>
+              <button class="btn btn-outline" onclick="openSpeakingTopicBank('p2')" style="padding:6px 14px;font-size:12px">📚 口语题库</button>
+            </div>
+          </div>
+          <textarea id="cueCardInput" style="background:var(--surface);border:1.5px solid var(--border);font-family:var(--font-body);font-size:13px;line-height:1.7;resize:vertical;padding:12px;border-radius:var(--radius);width:100%;min-height:100px" placeholder="Describe a memorable trip you have taken. You should say: where you went, who you went with, what you did there, and explain why it was memorable."></textarea>
+        </div>
+      </div>
+
+      <!-- Part 1 / 3: QA 答题队列面板（选择话题组后显示） -->
+      <div id="qaSessionPanel" style="display:none">
+        <div class="qa-session-head">
+          <span class="qa-session-topic" id="qaTopicBadge">—</span>
+          <span class="qa-step-progress" id="qaStepProgress"></span>
+          <div style="flex:1"></div>
+          <button class="btn btn-outline" id="qaRevertBtn" onclick="qaRevert()" style="display:none;padding:6px 14px;font-size:12px">↶ 上一题</button>
+          <button class="btn btn-outline" onclick="openSpeakingTopicBank(speakingPart)" style="padding:6px 14px;font-size:12px">📚 题库 / 换一组</button>
+        </div>
+        <div class="qa-question-card">
+          <div class="qa-question-text" id="qaCurrentQuestion"></div>
+          <div class="qa-mode-row" id="qaModeRow">
+            <button class="qa-mode-btn active" id="qaModeAudio" onclick="qaSetMode('audio')">🎤 录音作答</button>
+            <button class="qa-mode-btn" id="qaModeText" onclick="qaSetMode('text')">✍️ 文字作答</button>
           </div>
         </div>
-        <textarea id="cueCardInput" style="background:var(--surface);border:1.5px solid var(--border);font-family:var(--font-body);font-size:13px;line-height:1.7;resize:vertical;padding:12px;border-radius:var(--radius);width:100%;min-height:100px" placeholder="Describe a memorable trip you have taken. You should say: where you went, who you went with, what you did there, and explain why it was memorable."></textarea>
+        <div style="font-size:12px;color:var(--text-tertiary);margin:-4px 0 6px" id="qaExpectLine"></div>
+        <div class="qa-progress-chips" id="qaChips"></div>
+        <div style="margin-top:4px;display:none" id="qaAllDone">
+          <button class="btn btn-primary" onclick="finishSpeakingQASession()">📤 全部答完，提交评分</button>
+        </div>
       </div>
 
       <!-- Recording Area -->
       <div class="recording-area" id="recordingArea">
         <canvas class="waveform-canvas" id="waveformCanvas" width="800" height="120"></canvas>
         <div class="recording-timer" id="recordingTimer">⏱ 00:00</div>
-        <div class="recording-btn-group">
+        <div class="recording-btn-group" id="recordingBtnGroup">
           <button class="rec-btn rec-start" id="recStartBtn" onclick="startRecording()">🔴 开始录音</button>
           <button class="rec-btn rec-pause" id="recPauseBtn" onclick="pauseRecording()" disabled>⏸️ 暂停</button>
           <button class="rec-btn rec-stop" id="recStopBtn" onclick="stopRecording()" disabled>⏹️ 停止</button>
@@ -1186,19 +1246,23 @@
           <button class="rec-btn rec-clear" id="recClearBtn" onclick="clearRecording()" style="display:none">🔄 重新录制</button>
           <button class="rec-btn rec-submit" id="recSubmitBtn" onclick="startSpeakingGrading()" style="display:none">📤 提交评分</button>
         </div>
-      </div>
-
-      <!-- Mic Fallback -->
-      <div class="mic-fallback" id="micFallback">
-        <div class="mic-fallback-title">🎤 麦克风不可用</div>
-        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:8px">无法访问麦克风，请手动输入你的回答内容以便评分。</p>
-        <textarea id="manualTranscriptInput" placeholder="在此输入你的口语回答文本..."></textarea>
-        <div class="btn-row">
-          <button class="btn btn-primary" onclick="startSpeakingGradingManual()">📤 提交评分（手动输入）</button>
+        <!-- QA 主按钮（p1/p3 录音答完显示：下一题 / 完成提交） -->
+        <div class="qa-nav-row" id="qaNavRow">
+          <button class="rec-btn rec-submit" id="qaPrimaryBtn" onclick="qaPrimaryAction()" style="display:none">下一题 ▶</button>
         </div>
       </div>
 
-      <div class="btn-row">
+      <!-- Mic Fallback（P2 手动输入 / QA 文字作答共用） -->
+      <div class="mic-fallback" id="micFallback">
+        <div class="mic-fallback-title" id="micFallbackTitle">🎤 麦克风不可用</div>
+        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:8px" id="micFallbackText">无法访问麦克风，请手动输入你的回答内容以便评分。</p>
+        <textarea id="manualTranscriptInput" placeholder="在此输入你的口语回答文本..."></textarea>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="manualSubmitBtn" onclick="startSpeakingGradingManual()">📤 提交评分（手动输入）</button>
+        </div>
+      </div>
+
+      <div class="btn-row" id="spSampleRow">
         <button class="btn btn-secondary" onclick="loadSpeakingSample()">加载示例</button>
       </div>
     </div>
@@ -1210,21 +1274,21 @@
         <button class="btn btn-primary" onclick="downloadSpeakingMarkdown()" id="spExportBtn" style="display:none">📥 导出 Markdown</button>
       </div>
 
-      <div class="tabs">
-        <div class="tab active" onclick="switchSpeakingTab(this,'sp-tab-overview')">评分总览</div>
-        <div class="tab" onclick="switchSpeakingTab(this,'sp-tab-transcript')">转写批注</div>
-        <div class="tab" onclick="switchSpeakingTab(this,'sp-tab-grammar')">语法分析</div>
-        <div class="tab" onclick="switchSpeakingTab(this,'sp-tab-fluency')">流利度分析</div>
-        <div class="tab" onclick="switchSpeakingTab(this,'sp-tab-upgrades')">升级示范</div>
-        <div class="tab" onclick="switchSpeakingTab(this,'sp-tab-feedback')">详细反馈</div>
-        <div class="tab" onclick="switchSpeakingTab(this,'sp-tab-actions')">行动建议</div>
+      <div class="tabs" id="spResultTabs">
+        <div class="tab active" id="spTabOverview" onclick="switchSpeakingTab(this,'sp-tab-overview')">评分总览</div>
+        <div class="tab" id="spTabTranscript" onclick="switchSpeakingTab(this,'sp-tab-transcript')">转写批注</div>
+        <div class="tab" id="spTabGrammar" onclick="switchSpeakingTab(this,'sp-tab-grammar')">语法分析</div>
+        <div class="tab" id="spTabFluency" onclick="switchSpeakingTab(this,'sp-tab-fluency')">流利度分析</div>
+        <div class="tab" id="spTabUpgrades" onclick="switchSpeakingTab(this,'sp-tab-upgrades')">升级示范</div>
+        <div class="tab" id="spTabFeedback" onclick="switchSpeakingTab(this,'sp-tab-feedback')">详细反馈</div>
+        <div class="tab" id="spTabActions" onclick="switchSpeakingTab(this,'sp-tab-actions')">行动建议</div>
       </div>
 
       <!-- Tab: Overview -->
       <div class="tab-content active" id="sp-tab-overview">
         <div class="prompt-card animate-in" id="spOverviewPrompt">
           <div class="prompt-card-header">
-            <span class="prompt-card-label">Speaking Part 2 · Cue Card</span>
+            <span class="prompt-card-label" id="spOverviewTaskType">Speaking Part 2 · Cue Card</span>
             <span class="prompt-card-topic" id="spOverviewTopic">雅思口语</span>
           </div>
           <div class="prompt-card-instruction" id="spOverviewCueCard"></div>
@@ -1520,8 +1584,8 @@
 <!-- 口语题库弹窗 -->
 <div class="modal-overlay" id="speakingTopicModal" onclick="if(event.target===this)closeSpeakingTopicBank()">
   <div class="modal-box speaking-topic-box">
-    <div class="modal-title">📚 口语题库 <span style="font-size:12px;font-weight:400;color:var(--text-tertiary)">2026.9-12 新题 · Part 2 Cue Card</span></div>
-    <div class="modal-desc" style="margin-bottom:12px">点选一道 Cue Card，题目会自动填入答题区，然后照常录音评分。</div>
+    <div class="modal-title">📚 口语题库 <span style="font-size:12px;font-weight:400;color:var(--text-tertiary)" id="speakingTopicModalSub">2026.9-12 新题 · Part 2 Cue Card</span></div>
+    <div class="modal-desc" style="margin-bottom:12px" id="speakingTopicModalDesc">点选一道 Cue Card，题目会自动填入答题区，然后照常录音评分。</div>
     <div class="speaking-topic-cats" id="speakingTopicCats"></div>
     <div class="speaking-topic-grid" id="speakingTopicGrid"></div>
     <div class="modal-btn-row">
@@ -1549,6 +1613,7 @@
 <script src="vocabulary-data.js"></script>
 <script src="phonetics-data.js"></script>
 <script src="speaking-topics.js"></script>
+<script src="speaking-qa-topics.js"></script>
 <script src="simon-lessons.js"></script>
 <script>
 // ══════════════════════════════════════════════════════════════
@@ -1584,6 +1649,61 @@ let speakingTranscript = '';
 let speakingMetadata = null; // audio analysis result
 let speakingCueCard = '';
 let isSpeakingGrading = false;
+
+// Speaking Part scene: 'p1' | 'p2' | 'p3'  (default p2 = 现状 Part 2 独白)
+let speakingPart = 'p2';
+// p1/p3「一题一录」会话状态
+let speakingSession = null;       // { part, topicZh, topicEn, items[], cursor }
+let speakingDisplayPrompt = '';   // 结果概览展示的题面（p2=Cue Card / p1/p3=编号问题块）
+// 题库弹窗当前打开的 Part
+let speakingBankPart = 'p2';
+
+// 每 Part 的文案 / Prompt / Tab / 录音上限 配置
+const SPEAKING_PART_CONFIG = {
+  p1: {
+    overviewLabel: 'Speaking Part 1 · 面试问答',
+    taskType: 'Speaking Part 1 (Interview Q&A)',
+    labelShort: 'Part 1 · 问答',
+    hint: '选择一组话题，逐题录音短答（每题 2-3 句 / 15-25 秒），全部答完一次性评分',
+    topicLabel: '话题组',
+    systemDesc: '你正在评估一位考生对一组雅思口语 Part 1 面试短问答（Interview Q&A）的回答。每题都是简短问题，考生应在每题给出自然、直接、轻微扩展的回答（2-3 句即可），不应长篇大论。',
+    expectedShape: '每题作答长度：约 2-3 句（15-25 秒）。回答要直接回应所问，不必过度展开。',
+    upgrades: false,
+    tabs: ['overview', 'transcript', 'grammar', 'fluency', 'feedback', 'actions'],
+    autoStopSec: 60
+  },
+  p2: {
+    overviewLabel: 'Speaking Part 2 · Cue Card',
+    taskType: 'Speaking Part 2 (Cue Card)',
+    labelShort: 'Part 2 · 独白',
+    hint: '输入 Cue Card 题目，录制你的口语回答，AI 考官将从四个维度评分',
+    topicLabel: 'Cue Card 题目 / 话题卡',
+    systemDesc: '你正在评估一位考生对一张雅思口语 Part 2 Cue Card 话题卡的个人陈述（独白）。考生需就卡片上的要点连续讲 1-2 分钟，不应中途问考官问题。',
+    expectedShape: '作答形态：一次连续的个人陈述（约 1-2 分钟），覆盖 Cue Card 上的全部要点并有自然的展开。',
+    upgrades: true,
+    tabs: ['overview', 'transcript', 'grammar', 'fluency', 'upgrades', 'feedback', 'actions'],
+    autoStopSec: 300
+  },
+  p3: {
+    overviewLabel: 'Speaking Part 3 · 抽象讨论',
+    taskType: 'Speaking Part 3 (Discussion)',
+    labelShort: 'Part 3 · 讨论',
+    hint: '选择一组讨论主题，逐题录音作答（每题 3-5 句 / 30-60 秒，观点+理由/例子），全部答完一次性评分',
+    topicLabel: '讨论主题',
+    systemDesc: '你正在评估一位考生对一组雅思口语 Part 3 抽象话题讨论（Discussion）的回答。Part 3 的问题较抽象，涉及观点、原因、比较、影响与设想，考生应在每题给出有观点、有理由、必要时举例或对比的展开回答。',
+    expectedShape: '每题作答长度：约 3-5 句（30-60 秒）。回答应包含清晰观点 + 至少一层理由/例子/对比的展开。',
+    upgrades: false,
+    tabs: ['overview', 'transcript', 'grammar', 'fluency', 'feedback', 'actions'],
+    autoStopSec: 120
+  }
+};
+
+// 题库数据源 + 卡片渲染文案（按 Part）
+function speakingBankDataFor(part) {
+  if (part === 'p1') return { cats: SPEAKING_PART1_TOPICS, isP1P3: true };
+  if (part === 'p3') return { cats: SPEAKING_PART3_TOPICS, isP1P3: true };
+  return { cats: SPEAKING_TOPIC_CATEGORIES, isP1P3: false };
+}
 
 // Recording state machine
 const REC_STATE = { IDLE: 0, RECORDING: 1, PAUSED: 2, SAVED: 3 };
@@ -1827,6 +1947,7 @@ function enterMode(mode) {
     document.getElementById('listeningSidebarToggle').style.display = 'none';
     document.getElementById('vocabularySidebarToggle').style.display = 'none';
     // Groq key check happens at submit time — no auto-prompt on entry
+    renderSpeakingPartUI();
   } else if (mode === 'listening') {
     document.getElementById('writingWorkspace').classList.remove('active');
     document.getElementById('speakingWorkspace').classList.remove('active');
@@ -1869,7 +1990,119 @@ function goHome() {
   stopPlayback();
   if (speakingAudioUrl) { URL.revokeObjectURL(speakingAudioUrl); speakingAudioUrl = null; }
   if (audioStream) { audioStream.getTracks().forEach(t => t.stop()); audioStream = null; }
+  resetSpeakingSessionGlobals();
   window.scrollTo(0, 0);
+}
+
+// ══════════════════════════════════════════════════════════════
+// SPEAKING PART SWITCH (P1 / P2 / P3)
+// ══════════════════════════════════════════════════════════════
+function switchSpeakingPart(part) {
+  if (!SPEAKING_PART_CONFIG[part]) return;
+  if (isSpeakingGrading) { alert('正在评分中，请稍候再切换题型'); return; }
+  if (recState === REC_STATE.RECORDING || recState === REC_STATE.PAUSED) {
+    alert('请先停止当前录音再切换题型'); return;
+  }
+  if (part === speakingPart) { renderSpeakingPartUI(); return; }
+  resetTransientAndSession();   // 离开当前场景：清瞬时录音 + QA 会话（保留 P2 卡文本）
+  speakingPart = part;
+  speakingDisplayPrompt = '';
+  speakingResult = null;
+  speakingTranscript = '';
+  speakingMetadata = null;
+  speakingCueCard = speakingPart === 'p2' ? speakingCueCard : '';
+  // 回输入态
+  document.getElementById('speakingGradingView').classList.remove('active');
+  document.getElementById('speakingInputPanel').classList.remove('hidden');
+  document.getElementById('spFallbackArea').innerHTML = '';
+  resetSpeakingSidebar();
+  renderSpeakingPartUI();
+}
+
+function renderSpeakingPartUI() {
+  const cfg = SPEAKING_PART_CONFIG[speakingPart];
+  const isP2 = speakingPart === 'p2';
+  const cueGroup = document.getElementById('cueInputGroup');
+  const qaPanel = document.getElementById('qaSessionPanel');
+  const hint = document.getElementById('spPanelHint');
+  const cueLabel = document.getElementById('spCueLabel');
+  const cueInput = document.getElementById('cueCardInput');
+  const sampleRow = document.getElementById('spSampleRow');
+  if (cueGroup) cueGroup.style.display = isP2 ? '' : 'none';
+  if (qaPanel) qaPanel.style.display = isP2 ? 'none' : 'block';
+  if (sampleRow) sampleRow.style.display = isP2 ? '' : 'none';
+  if (hint) hint.textContent = cfg.hint;
+  if (cueLabel) cueLabel.textContent = cfg.topicLabel;
+  if (cueInput && !isP2) cueInput.placeholder = '';
+  document.querySelectorAll('#spPartToggle .sp-part-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.part === speakingPart));
+  setMicFallbackP2Mode(); // P2 手动输入默认语义；QA 文字模式进入时覆盖
+  if (isP2) {
+    hideMicFallbackEditor();
+  } else if (speakingSession) {
+    renderQaSession();
+  } else {
+    renderQaEmptyState();
+  }
+}
+
+function renderQaEmptyState() {
+  const panel = document.getElementById('qaSessionPanel');
+  if (!panel) return;
+  qaManualMode = false;
+  panel.style.display = 'block';
+  document.getElementById('qaTopicBadge').textContent = '—';
+  document.getElementById('qaStepProgress').textContent = '';
+  document.getElementById('qaCurrentQuestion').textContent =
+    '请先点击右上角「📚 题库 / 换一组」选择一组题目，再逐题作答。';
+  document.getElementById('qaExpectLine').textContent = '';
+  document.getElementById('qaChips').innerHTML = '';
+  document.getElementById('qaAllDone').style.display = 'none';
+  document.getElementById('qaRevertBtn').style.display = 'none';
+  updateModeButtons();
+  hideMicFallbackEditor();
+  document.getElementById('manualTranscriptInput').value = '';
+  resetRecorderToIdle();
+  updateRecButtons();
+}
+
+function resetTransientAndSession() {
+  forceStopRecorder();
+  if (speakingAudioUrl) { URL.revokeObjectURL(speakingAudioUrl); speakingAudioUrl = null; }
+  speakingAudioBlob = null;
+  if (speakingSession) {
+    speakingSession.items.forEach(it => {
+      if (it.audioUrl) { URL.revokeObjectURL(it.audioUrl); it.audioUrl = null; }
+      it.audioBlob = null; it.manualText = ''; it.answered = false;
+    });
+    speakingSession = null;
+  }
+  qaManualMode = false;
+  hideMicFallbackEditor();
+  document.getElementById('manualTranscriptInput').value = '';
+  document.getElementById('recordingTimer').textContent = '⏱ 00:00';
+  document.getElementById('recStartBtn').onclick = startRecording;
+  drawIdleWaveform();
+}
+
+// 清理当前会话 / 结果状态（离开口语、重置时调用）
+function resetSpeakingSessionGlobals() {
+  forceStopRecorder();
+  if (speakingAudioUrl) { URL.revokeObjectURL(speakingAudioUrl); speakingAudioUrl = null; }
+  speakingAudioBlob = null;
+  if (speakingSession) {
+    speakingSession.items.forEach(it => { if (it.audioUrl) { URL.revokeObjectURL(it.audioUrl); it.audioUrl = null; } it.audioBlob = null; });
+    speakingSession = null;
+  }
+  qaManualMode = false;
+  hideMicFallbackEditor();
+  document.getElementById('manualTranscriptInput').value = '';
+  speakingResult = null;
+  speakingTranscript = '';
+  speakingMetadata = null;
+  speakingCueCard = '';
+  speakingDisplayPrompt = '';
+  speakingPart = 'p2'; // 重置回 Part 2 默认（goHome / resetAll 后重进口语为 P2）
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -2847,9 +3080,13 @@ function resetAll() {
     return;
   }
   if (appMode === 'speaking') {
-    clearRecording();
+    resetSpeakingSessionGlobals(); // 清 session / 结果 / 录音 / URL / 手动输入
     document.getElementById('cueCardInput').value = '';
+    document.getElementById('manualTranscriptInput').value = '';
+    document.getElementById('spExportBtn').style.display = 'none';
+    if (speakingPart !== 'p2') speakingPart = 'p2'; // 回到 P2 默认
     resetSpeakingSidebar();
+    renderSpeakingPartUI();
     document.getElementById('speakingGradingView').classList.remove('active');
     document.getElementById('speakingInputPanel').classList.remove('hidden');
     return;
@@ -3164,6 +3401,7 @@ function updateRecButtons() {
   const playBtn = document.getElementById('recPlayBtn');
   const clearBtn = document.getElementById('recClearBtn');
   const submitBtn = document.getElementById('recSubmitBtn');
+  const navRow = document.getElementById('qaNavRow');
 
   switch (recState) {
     case REC_STATE.IDLE:
@@ -3194,10 +3432,41 @@ function updateRecButtons() {
       clearBtn.style.display = ''; submitBtn.style.display = '';
       break;
   }
+
+  // ── Part 1/3 QA overrides ─────────────────────────────
+  if (speakingPart !== 'p2') {
+    submitBtn.style.display = 'none'; // QA 不用 P2 提交钮
+    if (qaManualMode) {
+      // 文字作答模式：隐藏录音控件，主编辑器为 #micFallback
+      startBtn.style.display = 'none'; pauseBtn.style.display = 'none'; stopBtn.style.display = 'none';
+      playBtn.style.display = 'none'; clearBtn.style.display = 'none';
+      navRow.classList.remove('qa-visible');
+    } else if (recState === REC_STATE.SAVED && curItem() && curItem().audioBlob) {
+      startBtn.style.display = 'none'; pauseBtn.style.display = 'none'; stopBtn.style.display = 'none';
+      playBtn.style.display = ''; playBtn.textContent = isPlayingBack ? '⏹️ 停止播放' : '▶️ 播放回听';
+      playBtn.onclick = isPlayingBack ? stopPlayback : playbackRecording;
+      clearBtn.style.display = '';
+      navRow.classList.add('qa-visible');
+      document.getElementById('qaPrimaryBtn').textContent = qaIsLast() ? '📤 完成并提交评分' : '下一题 ▶';
+    } else {
+      navRow.classList.remove('qa-visible');
+    }
+  } else if (navRow) {
+    navRow.classList.remove('qa-visible');
+  }
 }
 
 async function startRecording() {
   try {
+    // Part 1/3：必须先选话题组且游标有效
+    if (speakingPart !== 'p2' && (!speakingSession || speakingSession.cursor >= speakingSession.items.length)) {
+      alert('请先选择一组题目，再开始录音');
+      return;
+    }
+    if (speakingPart !== 'p2' && qaManualMode) { qaSetMode('audio'); }
+    // 若上一题处于 SAVED 态需先回到 IDLE（清空旧音轨引用，不动已答 item）
+    if (recState === REC_STATE.SAVED) { resetRecorderToIdle(); }
+
     audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
     const audioCtx = new AudioContext();
     const source = audioCtx.createMediaStreamSource(audioStream);
@@ -3210,9 +3479,25 @@ async function startRecording() {
     audioChunks = [];
     mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunks.push(e.data); };
     mediaRecorder.onstop = () => {
-      speakingAudioBlob = new Blob(audioChunks, { type: mimeType });
-      if (speakingAudioUrl) URL.revokeObjectURL(speakingAudioUrl);
-      speakingAudioUrl = URL.createObjectURL(speakingAudioBlob);
+      const blob = new Blob(audioChunks, { type: mimeType });
+      if (speakingPart !== 'p2') {
+        // QA：写入当前问题 slot
+        const it = curItem();
+        if (it) {
+          if (it.audioUrl) URL.revokeObjectURL(it.audioUrl);
+          it.audioBlob = blob;
+          it.audioUrl = URL.createObjectURL(blob);
+          it.answered = true;
+          it.manualText = '';
+          speakingAudioBlob = it.audioBlob;
+          speakingAudioUrl = it.audioUrl;
+        }
+      } else {
+        speakingAudioBlob = blob;
+        if (speakingAudioUrl) URL.revokeObjectURL(speakingAudioUrl);
+        speakingAudioUrl = URL.createObjectURL(blob);
+      }
+      speakingMetadata = null; // 重录后避免复用陈旧音频元数据
       recState = REC_STATE.SAVED;
       stopTimer();
       stopWaveform();
@@ -3227,7 +3512,16 @@ async function startRecording() {
     startWaveform();
     startTimer();
   } catch (err) {
-    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError' || err.name === 'NotFoundError') {
+      // P2：保持默认（评一份整段） / QA：自动切到文字作答模式
+      if (speakingPart === 'p2') {
+        setMicFallbackP2Mode();
+      } else {
+        qaManualMode = true;
+        updateModeButtons();
+        showMicFallbackEditor();
+        updateRecButtons();
+      }
       document.getElementById('micFallback').classList.add('show');
     } else {
       alert('录音启动失败: ' + err.message);
@@ -3293,6 +3587,18 @@ function clearRecording() {
   stopTimer();
   stopPlayback();
   if (audioStream) { audioStream.getTracks().forEach(t => t.stop()); audioStream = null; }
+  if (speakingPart !== 'p2') {
+    // QA：只清当前问题 slot 的回答
+    const it = curItem();
+    if (it) {
+      if (it.audioUrl) URL.revokeObjectURL(it.audioUrl);
+      it.audioBlob = null; it.audioUrl = null;
+      it.manualText = ''; it.answered = false;
+    }
+    qaManualMode = false;
+    updateModeButtons();
+    hideMicFallbackEditor();
+  }
   if (speakingAudioUrl) { URL.revokeObjectURL(speakingAudioUrl); speakingAudioUrl = null; }
   speakingAudioBlob = null;
   audioChunks = [];
@@ -3309,16 +3615,253 @@ function clearRecording() {
 function startTimer() {
   recStartTime = Date.now();
   if (recTimerInterval) clearInterval(recTimerInterval);
+  const cap = SPEAKING_PART_CONFIG[speakingPart] ? SPEAKING_PART_CONFIG[speakingPart].autoStopSec : 300;
   recTimerInterval = setInterval(() => {
     const elapsed = recElapsedBeforePause + (Date.now() - recStartTime) / 1000;
     const totalSec = Math.floor(elapsed);
     document.getElementById('recordingTimer').textContent = '⏱ ' + formatTime(totalSec);
-    if (totalSec >= 300) stopRecording(); // Auto-stop at 5 min
+    if (totalSec >= cap) stopRecording(); // 达到该 Part 单次录音上限自动停止
   }, 200);
 }
 
 function stopTimer() {
   if (recTimerInterval) { clearInterval(recTimerInterval); recTimerInterval = null; }
+}
+
+// ══════════════════════════════════════════════════════════════
+// SPEAKING: PART 1/3 QA 答题队列 helpers
+// ══════════════════════════════════════════════════════════════
+let qaManualMode = false; // true = 用文字作答当前题（#micFallback 编辑器）
+
+function curItem() {
+  return speakingSession ? speakingSession.items[speakingSession.cursor] : null;
+}
+function qaIsLast() {
+  return !!(speakingSession && speakingSession.cursor === speakingSession.items.length - 1);
+}
+function curAnswered() {
+  const it = curItem();
+  return !!(it && it.answered);
+}
+function qaAllAnswered() {
+  return !!speakingSession && speakingSession.items.every(it => it.answered);
+}
+function buildSpeakingQuestionBlock(sess) {
+  return sess.items.map((it, i) => 'Q' + (i + 1) + '. ' + it.question).join('\n');
+}
+
+function startSpeakingQASession(group) {
+  if (recState === REC_STATE.RECORDING || recState === REC_STATE.PAUSED) {
+    alert('请先停止当前录音再换一组题'); return;
+  }
+  if (!group || !group.questions || !group.questions.length) return;
+  const items = group.questions.map(q => ({
+    question: q, audioBlob: null, audioUrl: null, manualText: '', answered: false
+  }));
+  speakingSession = { part: speakingPart, topicZh: group.name, topicEn: group.en || '', items, cursor: 0 };
+  qaManualMode = false;
+  speakingDisplayPrompt = buildSpeakingQuestionBlock(speakingSession);
+  speakingResult = null;
+  speakingTranscript = '';
+  speakingCueCard = '';
+  speakingMetadata = null;
+  resetSpeakingSidebar();
+  renderQaSession();
+  // 若无麦克风权限自动切文字——startRecording 的 catch 已处理；此处不动
+}
+
+function renderQaSession() {
+  if (!speakingSession || speakingPart === 'p2') return;
+  const cfg = SPEAKING_PART_CONFIG[speakingPart];
+  const panel = document.getElementById('qaSessionPanel');
+  if (!panel) return;
+  const it = curItem();
+  panel.style.display = 'block';
+  document.getElementById('qaTopicBadge').textContent =
+    (speakingSession.topicEn ? speakingSession.topicEn + ' · ' : '') + speakingSession.topicZh;
+  document.getElementById('qaStepProgress').textContent =
+    'Question ' + (speakingSession.cursor + 1) + ' / ' + speakingSession.items.length;
+  document.getElementById('qaCurrentQuestion').textContent = it ? it.question : '';
+  document.getElementById('qaExpectLine').textContent = (cfg && cfg.expectedShape) ? cfg.expectedShape : '';
+  // 答题进度圆点
+  const chips = speakingSession.items.map((item, i) => {
+    let cls = 'qa-chip';
+    if (item.answered) cls = 'qa-chip done';
+    else if (i === speakingSession.cursor) cls = 'qa-chip current';
+    return '<div class="' + cls + '" title="' + escHtml(item.question) + '">' + (i + 1) + '</div>';
+  }).join('');
+  document.getElementById('qaChips').innerHTML = chips;
+  document.getElementById('qaAllDone').style.display = qaAllAnswered() ? 'block' : 'none';
+  // 上一题按钮
+  document.getElementById('qaRevertBtn').style.display = (speakingSession.cursor > 0) ? '' : 'none';
+
+  // 依据目标 item 决定输入模式（未答题：沿用当前模式）
+  if (it && it.answered) {
+    qaManualMode = it.audioBlob ? false : true;
+  }
+  updateModeButtons();
+
+  // 清理瞬时录音态（不破坏已存 item）
+  stopPlayback();
+  stopWaveform();
+  stopTimer();
+  if (audioStream) { audioStream.getTracks().forEach(t => t.stop()); audioStream = null; }
+  audioChunks = [];
+  analyserNode = null;
+  recElapsedBeforePause = 0;
+  document.getElementById('recordingTimer').textContent = '⏱ 00:00';
+  const st = document.getElementById('recStartBtn');
+  if (st) { st.onclick = startRecording; st.textContent = '🔴 开始录音'; }
+
+  if (qaManualMode) {
+    // 文字作答：镜像指向无音频；编辑器显示
+    speakingAudioBlob = null; speakingAudioUrl = null;
+    recState = REC_STATE.IDLE;
+    showMicFallbackEditor();
+    drawIdleWaveform();
+  } else {
+    hideMicFallbackEditor();
+    document.getElementById('manualTranscriptInput').value = '';
+    if (it && it.audioBlob) {
+      speakingAudioBlob = it.audioBlob;
+      speakingAudioUrl = it.audioUrl;
+      recState = REC_STATE.SAVED;
+    } else {
+      speakingAudioBlob = null; speakingAudioUrl = null;
+      recState = REC_STATE.IDLE;
+      drawIdleWaveform();
+    }
+  }
+  updateRecButtons();
+}
+
+function qaSetMode(mode) {
+  if (speakingPart === 'p2' || !curItem()) return;
+  if (mode === 'text') {
+    if (recState === REC_STATE.RECORDING || recState === REC_STATE.PAUSED) {
+      alert('请先停止当前录音再切换输入方式'); return;
+    }
+    qaManualMode = true;
+    updateModeButtons();
+    showMicFallbackEditor();
+    // 隐藏录音控件
+    recState = REC_STATE.IDLE;
+    stopWaveform(); stopTimer(); drawIdleWaveform();
+  } else {
+    qaManualMode = false;
+    hideMicFallbackEditor();
+    document.getElementById('manualTranscriptInput').value = '';
+    const it = curItem();
+    if (it && it.audioBlob) { speakingAudioBlob = it.audioBlob; speakingAudioUrl = it.audioUrl; recState = REC_STATE.SAVED; }
+    else { speakingAudioBlob = null; speakingAudioUrl = null; recState = REC_STATE.IDLE; }
+  }
+  updateRecButtons();
+}
+
+function updateModeButtons() {
+  const a = document.getElementById('qaModeAudio');
+  const t = document.getElementById('qaModeText');
+  if (!a || !t) return;
+  a.classList.toggle('active', !qaManualMode);
+  t.classList.toggle('active', qaManualMode);
+}
+
+function showMicFallbackEditor() {
+  const title = document.getElementById('micFallbackTitle');
+  const text = document.getElementById('micFallbackText');
+  const btn = document.getElementById('manualSubmitBtn');
+  const it = curItem();
+  if (title) title.textContent = '✍️ 文字作答本题';
+  if (text) text.textContent = '在此输入本题的口语回答文本。纯文本仅评分语言与内容，不计语速/停顿。';
+  btn.textContent = qaIsLast() ? '📤 保存并提交评分' : '保存并下一题 ▶';
+  btn.onclick = saveQaManualAnswer;
+  document.getElementById('manualTranscriptInput').value = (it && it.manualText) ? it.manualText : '';
+  document.getElementById('micFallback').classList.add('show');
+}
+
+function hideMicFallbackEditor() {
+  document.getElementById('micFallback').classList.remove('show');
+}
+
+function setMicFallbackP2Mode() {
+  const title = document.getElementById('micFallbackTitle');
+  const text = document.getElementById('micFallbackText');
+  const btn = document.getElementById('manualSubmitBtn');
+  if (title) title.textContent = '🎤 麦克风不可用';
+  if (text) text.textContent = '无法访问麦克风，请手动输入你的回答内容以便评分。';
+  btn.textContent = '📤 提交评分（手动输入）';
+  btn.onclick = startSpeakingGradingManual;
+}
+
+function forceStopRecorder() {
+  // 若正在录音/暂停，先优雅停止 MediaRecorder（onstop 会空安全写入）
+  if ((recState === REC_STATE.RECORDING || recState === REC_STATE.PAUSED) && mediaRecorder) {
+    try { mediaRecorder.stop(); } catch (e) {}
+  }
+  stopPlayback();
+  stopWaveform();
+  stopTimer();
+  if (audioStream) { audioStream.getTracks().forEach(t => t.stop()); audioStream = null; }
+  audioChunks = [];
+  analyserNode = null;
+  recState = REC_STATE.IDLE;
+  recElapsedBeforePause = 0;
+}
+
+function resetRecorderToIdle() {
+  // 清理当前瞬时录音态（不清理已存 item / 不 revoke item URL）
+  forceStopRecorder();
+  document.getElementById('recordingTimer').textContent = '⏱ 00:00';
+  document.getElementById('recStartBtn').onclick = startRecording;
+  drawIdleWaveform();
+}
+
+function qaNext() {
+  if (!curAnswered()) return;
+  if (qaIsLast()) { finishSpeakingQASession(); return; }
+  speakingSession.cursor++;
+  renderQaSession();
+}
+
+function qaPrimaryAction() {
+  if (!curAnswered()) { alert('请先完成本题回答（录音或文字）'); return; }
+  qaNext();
+}
+
+function qaRevert() {
+  if (!speakingSession || speakingSession.cursor <= 0) return;
+  if (recState === REC_STATE.RECORDING || recState === REC_STATE.PAUSED) {
+    alert('请先停止当前录音再切换上一题'); return;
+  }
+  speakingSession.cursor--;
+  renderQaSession();
+}
+
+function saveQaManualAnswer() {
+  const it = curItem();
+  if (!it) return;
+  const text = document.getElementById('manualTranscriptInput').value.trim();
+  if (!text) { alert('请输入本题的回答文本'); return; }
+  it.manualText = text;
+  it.answered = true;
+  if (it.audioUrl) { URL.revokeObjectURL(it.audioUrl); it.audioUrl = null; }
+  it.audioBlob = null;
+  if (speakingAudioUrl) { URL.revokeObjectURL(speakingAudioUrl); speakingAudioUrl = null; }
+  speakingAudioBlob = null;
+  speakingMetadata = null;
+  document.getElementById('manualTranscriptInput').value = '';
+  if (qaIsLast()) {
+    finishSpeakingQASession();
+  } else {
+    speakingSession.cursor++;
+    renderQaSession(); // 停留在文字模式继续答下一题
+  }
+}
+
+function finishSpeakingQASession() {
+  if (speakingPart === 'p2') { startSpeakingGrading(); return; }
+  if (!speakingSession || !qaAllAnswered()) { alert('请先答完全部题目再提交'); return; }
+  runSpeakingQASessionGrading();
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -3487,15 +4030,52 @@ const SPEAKING_DESCRIPTORS = `### Speaking Band Descriptors
 // ══════════════════════════════════════════════════════════════
 // SPEAKING: PROMPT BUILDERS
 // ══════════════════════════════════════════════════════════════
-function buildSpeakingSystemPrompt() {
+function speakingAudioNormGuide(part) {
+  if (part === 'p1') {
+    return `- wpm (语速)：Part 1 为短问答合集，整体正常 130-180 wpm；明显过慢或停顿过多说明准备不足。
+- pause_count / pause_ratio：短答逐题统计不稳定，停顿占比仅供参考；停顿占比 > 20% 才作为 FC 限制依据。
+- filler_words：填充词占比 > 6%（整体）→ FC 上限 -0.5。
+- self_corrections：>3 次/分钟 → 语言控制力不足。
+- volume_variance：< 0.15 → 缺乏语调变化，P 降档；0.15-0.35 正常；> 0.35 语调丰富。
+- 内容量：某题回答过短（<8 词）视为未能展开，FC/GRA 应受限。`;
+  }
+  if (part === 'p3') {
+    return `- wpm (语速)：Part 3 为抽象讨论，整体正常 120-160 wpm；过慢(持续<100)FC ≤ 6.0。
+- pause_count / pause_ratio：停顿占比 > 15% → FC 受限；> 20% → FC ≤ 5.5。
+- filler_words：填充词占比 > 6%（整体）→ FC 上限 -0.5。
+- self_corrections：>4次/分钟 → 语言控制力不足。
+- volume_variance：< 0.15 → 缺乏语调变化，P 降档；0.15-0.35 正常；> 0.35 语调丰富。
+- 内容量：某题只有一句且无理由/例证，视为未充分讨论，FC/LR 受限。`;
+  }
+  return `- wpm (语速)：正常英语口语 120-150 wpm。< 100 过慢 FC ≤ 6.0；> 180 可能背诵。
+- pause_count / pause_ratio：停顿占比 > 10% → FC ≤ 5.5；每30秒>5次停顿 → FC 受限。
+- filler_words：填充词占比 > 5% → FC 上限 -0.5。
+- self_corrections：>5次/2分钟 → 语言控制力不足。
+- volume_variance：< 0.15 → 缺乏语调变化，P 降档；0.15-0.35 正常；> 0.35 语调丰富。`;
+}
+
+function buildSpeakingSystemPrompt(part) {
+  const p = part || 'p2';
+  const cfg = SPEAKING_PART_CONFIG[p] || SPEAKING_PART_CONFIG.p2;
+  const qa = (p !== 'p2');
+  const upgradeSection = cfg.upgrades ? `### 范文升级生成（核心）
+你必须在 \`transcript_upgrades\` 字段中生成 Band 6 和 Band 7 两个版本的升级范文。规则：
+1. **保留原意**：不改变考生想表达的核心内容和意思，不要编造新经历或观点
+2. **逐级提升**：Band 6 版本修正明显的语法错误和词汇误用，让表达清晰但不过于复杂；Band 7 版本进一步提升词汇多样性、复杂句使用、地道表达和自然的衔接
+3. **口语化**：升级版必须是自然的口语，不是书面作文！保留口语特征（如可以适当使用 well, actually, I mean 等自然衔接词，但不用过多填充词）
+4. **标注差异**：每条升级附上一句话说明"相比原回答具体改进了什么，为什么能加分"
+5. 每个版本长度与原文相近（±20%），不要太长` : `### 范文升级（本部分不生成）
+本部分（${cfg.overviewLabel}）不需要生成升级范文。在输出 JSON 中把 \`transcript_upgrades\` 置为 null。`;
+
   return `你是一位专业的 IELTS 口语考官，拥有超过 10 年的雅思口语评分经验，熟悉剑桥官方口语评分标准。
 
-你正在评估一位考生对 Cue Card 的口语回答。你将收到：
-1. 考生录音的**转写文本**（由 Whisper 语音识别生成）
+${cfg.systemDesc} 你将收到：
+1. 考生录音的**转写文本**（由 Whisper 语音识别生成${qa ? '，以 "Q编号." / "A编号." 成对呈现，A 即考生对对应问题的逐题回答' : ''}）
 2. 前端从录音中提取的**音频元数据**（语速、停顿、音量变化等）
 
 你需要从 4 个维度分别评分，并给出 Overall Band Score。
 
+${cfg.expectedShape ? '### 期望作答形态\n' + cfg.expectedShape + '\n\n' : ''}
 ### 口语评分标准量表
 ${SPEAKING_DESCRIPTORS}
 
@@ -3506,35 +4086,30 @@ ${SPEAKING_DESCRIPTORS}
 3. 【举证】：必须从转写文本或音频元数据中引用至少 2 处具体证据。
 
 ### 音频元数据使用指南
-- wpm (语速)：正常英语口语 120-150 wpm。< 100 过慢 FC ≤ 6.0；> 180 可能背诵。
-- pause_count / pause_ratio：停顿占比 > 10% → FC ≤ 5.5；每30秒>5次停顿 → FC 受限。
-- filler_words：填充词占比 > 5% → FC 上限 -0.5。
-- self_corrections：>5次/2分钟 → 语言控制力不足。
-- volume_variance：< 0.15 → 缺乏语调变化，P 降档；0.15-0.35 正常；> 0.35 语调丰富。
+${speakingAudioNormGuide(p)}
 
 ### 口语评分注意事项
 - 区分口误（slips）与系统性错误：口语中偶发的 he don't 不应过度扣分，频繁出现则视为系统性语法问题。
 - 词汇侧重口语化：使用地道的 phrasal verbs、口语习语、自然的 paraphrase 应加分。
 - 发音评估是间接的：你无法直接听到录音，只能通过转写文本 + 音频元数据推断。在 P 维度 analysis 中必须标注"本评分为 AI 基于音频特征推断，仅供参考"。
 - 容错 STT 误差：Whisper 转写可能存在少量同音词错误，不要因个别可能的转写错误严厉扣分。
+${qa ? `
+### 多题问答特别说明
+- 转写文本中每一段 A 是对应 Q 的独立回答。对每段回答都请点评，但 FC / LR / GRA / P 与 Overall 只给出**整场一次综合分**（对应一次考试的一个 Part）。
+- 回答若与问题不相关（答非所问）必须明确扣分。
+- 转写批注：可以原样保留 "Q1."/"A1." 等标记不做标注，只对 A 的回答内容加 span 标注。` : ''}
 
 ### 转写文本批注生成规则
 在 \`transcript_annotated\` 字段中返回完整转写文本。使用 HTML span 标签标注，**属性必须用单引号**。
 可用 class：\`ielts-good\`(优秀表达)、\`ielts-grammar\`(语法问题)、\`ielts-vocab\`(词汇误用)、\`ielts-fluency\`(流利度问题)、\`ielts-pronounce\`(发音问题)。
 
-### 范文升级生成（核心）
-你必须在 \`transcript_upgrades\` 字段中生成 Band 6 和 Band 7 两个版本的升级范文。规则：
-1. **保留原意**：不改变考生想表达的核心内容和意思，不要编造新经历或观点
-2. **逐级提升**：Band 6 版本修正明显的语法错误和词汇误用，让表达清晰但不过于复杂；Band 7 版本进一步提升词汇多样性、复杂句使用、地道表达和自然的衔接
-3. **口语化**：升级版必须是自然的口语，不是书面作文！保留口语特征（如可以适当使用 well, actually, I mean 等自然衔接词，但不用过多填充词）
-4. **标注差异**：每条升级附上一句话说明"相比原回答具体改进了什么，为什么能加分"
-5. 每个版本长度与原文相近（±20%），不要太长
+${upgradeSection}
 
 ### 输出 JSON 格式
 严格按照以下结构输出，不要包含 Markdown 标记。先分析后评分。
 
 {
-  "prompt_analysis": { "task_type": "Speaking Part 2 (Cue Card)", "core_topic": "提取的核心话题" },
+  "prompt_analysis": { "task_type": "${cfg.taskType}", "core_topic": "提取的核心话题" },
   "transcript_annotated": "完整转写文本（含 span 标签）",
   "grammar_issues_list": [{ "title": "错误类别", "original": "原文", "correction": "修正", "note": "解析" }],
   "feedback": {
@@ -3549,22 +4124,20 @@ ${SPEAKING_DESCRIPTORS}
     "pronunciation": { "analysis": "基于音频元数据的推断（注明AI推断仅供参考）", "evidence": "音量变化+转写线索", "band": 0.0 }
   },
   "overall": 0.0,
-  "transcript_upgrades": {
-    "band6": { "text": "升级到 Band 6 的完整口语范文", "note": "一句话说明主要改进点" },
-    "band7": { "text": "升级到 Band 7 的完整口语范文", "note": "一句话说明相比 Band 6 进一步提升了什么" }
-  },
+  "transcript_upgrades": ${cfg.upgrades ? '{ "band6": { "text": "升级到 Band 6 的完整口语范文", "note": "一句话说明主要改进点" }, "band7": { "text": "升级到 Band 7 的完整口语范文", "note": "一句话说明相比 Band 6 进一步提升了什么" } }' : 'null'},
   "next_steps": { "action_1": "...", "action_2": "...", "action_3": "..." }
 }`;
 }
 
-function buildSpeakingUserPrompt(cueCard, transcript, meta) {
+function buildSpeakingUserPrompt(part, questionBlock, transcript, meta) {
+  const cfg = SPEAKING_PART_CONFIG[part] || SPEAKING_PART_CONFIG.p2;
+  const label = (part && part !== 'p2') ? '### 题目（逐题）\n' + questionBlock : '### Cue Card 题目\n' + questionBlock;
   return `请对以下雅思口语回答进行评分。
 
 ### 任务类型
-Speaking Part 2 (Cue Card - 话题卡独白)
+${cfg.taskType}
 
-### Cue Card 题目
-${cueCard}
+${label}
 
 ### 考生回答转写文本
 ${transcript}
@@ -3591,8 +4164,47 @@ ${transcript}
 // ══════════════════════════════════════════════════════════════
 // SPEAKING: MAIN GRADING FLOW
 // ══════════════════════════════════════════════════════════════
+async function scoreAndRenderSpeaking(part, displayPrompt, transcript, meta) {
+  // UI 已隐藏 + loading 已显示；完成评分/渲染并复位 isSpeakingGrading
+  try {
+    document.getElementById('loadingTips').textContent = '正在综合评分...';
+    const sysPrompt = buildSpeakingSystemPrompt(part);
+    const usrPrompt = buildSpeakingUserPrompt(part, displayPrompt, transcript, meta);
+    const rawResponse = await callAPI(sysPrompt, usrPrompt);
+    const result = parseResponse(rawResponse);
+
+    hideLoading();
+    isSpeakingGrading = false;
+
+    if (result.success) {
+      speakingResult = result.data;
+      renderSpeakingResult(result.data, displayPrompt, transcript, meta, part);
+      document.getElementById('spExportBtn').style.display = 'inline-flex';
+      return true;
+    }
+    document.getElementById('speakingGradingView').classList.add('active');
+    document.getElementById('spFallbackArea').innerHTML = `<div class="fallback-box"><div class="fallback-title">⚠️ JSON 解析失败</div><div class="fallback-desc">AI 返回数据格式异常。错误：${result.error}</div><textarea class="fallback-textarea" readonly>${escHtml(rawResponse)}</textarea></div>`;
+    renderSpeakingSidebar({}, meta);
+    return false;
+  } catch (err) {
+    hideLoading();
+    isSpeakingGrading = false;
+    handleSpeakingError(err);
+    return false;
+  }
+}
+
+function handleSpeakingError(err) {
+  if (err.message === 'GROQ_KEY_MISSING' || err.message === 'API_KEY_MISSING') { showApiKeyModal(); }
+  else { alert('评分出错: ' + err.message); }
+  document.getElementById('speakingInputPanel').classList.remove('hidden');
+  recState = REC_STATE.SAVED;
+  updateRecButtons();
+}
+
 async function startSpeakingGrading() {
   if (isSpeakingGrading) return;
+  if (speakingPart !== 'p2') { finishSpeakingQASession(); return; }
   const cueCard = document.getElementById('cueCardInput').value.trim();
   if (!cueCard) { alert('请填写 Cue Card 题目'); return; }
   if (!speakingAudioBlob) { alert('请先录制回答'); return; }
@@ -3601,6 +4213,7 @@ async function startSpeakingGrading() {
 
   isSpeakingGrading = true;
   speakingCueCard = cueCard;
+  speakingDisplayPrompt = cueCard;
   recState = REC_STATE.SAVED;
   updateRecButtons();
 
@@ -3610,54 +4223,28 @@ async function startSpeakingGrading() {
   showLoading('speaking');
 
   try {
-    // Step 1: Audio analysis (if not already done)
     if (!speakingMetadata) {
       speakingMetadata = await analyzeAudio(speakingAudioBlob);
     }
-
-    // Step 2: STT
     document.getElementById('loadingTips').textContent = '正在转写录音...';
     const sttResult = await callGroqWhisper(speakingAudioBlob);
     speakingTranscript = sttResult.text;
     if (!speakingTranscript.trim()) {
       throw new Error('转写结果为空，请重新录制');
     }
-
-    // Step 3: Text analysis
     const textStats = analyzeTranscript(speakingTranscript);
     const wpm = Math.round(textStats.wordCount / (speakingMetadata.duration_seconds / 60));
     const fullMeta = { ...speakingMetadata, ...textStats, wpm };
-
-    // Step 4: AI Scoring
-    document.getElementById('loadingTips').textContent = '正在评分...';
-    const sysPrompt = buildSpeakingSystemPrompt();
-    const usrPrompt = buildSpeakingUserPrompt(cueCard, speakingTranscript, fullMeta);
-    const rawResponse = await callAPI(sysPrompt, usrPrompt);
-    const result = parseResponse(rawResponse);
-
-    hideLoading();
-
-    if (result.success) {
-      speakingResult = result.data;
-      renderSpeakingResult(result.data, cueCard, speakingTranscript, fullMeta);
-      document.getElementById('spExportBtn').style.display = 'inline-flex';
-    } else {
-      document.getElementById('speakingGradingView').classList.add('active');
-      document.getElementById('spFallbackArea').innerHTML = `<div class="fallback-box"><div class="fallback-title">⚠️ JSON 解析失败</div><div class="fallback-desc">AI 返回数据格式异常。错误：${result.error}</div><textarea class="fallback-textarea" readonly>${escHtml(rawResponse)}</textarea></div>`;
-      renderSpeakingSidebar({}, fullMeta);
-    }
+    await scoreAndRenderSpeaking('p2', cueCard, speakingTranscript, fullMeta);
   } catch (err) {
     hideLoading();
-    if (err.message === 'GROQ_KEY_MISSING') { showApiKeyModal(); }
-    else if (err.message === 'API_KEY_MISSING') { showApiKeyModal(); }
-    else { alert('评分出错: ' + err.message); }
-    document.getElementById('speakingInputPanel').classList.remove('hidden');
-    recState = REC_STATE.SAVED;
-    updateRecButtons();
+    isSpeakingGrading = false;
+    handleSpeakingError(err);
   }
 }
 
 async function startSpeakingGradingManual() {
+  if (speakingPart !== 'p2') { saveQaManualAnswer(); return; }
   const cueCard = document.getElementById('cueCardInput').value.trim();
   const manualText = document.getElementById('manualTranscriptInput').value.trim();
   if (!cueCard) { alert('请填写 Cue Card 题目'); return; }
@@ -3666,6 +4253,7 @@ async function startSpeakingGradingManual() {
 
   isSpeakingGrading = true;
   speakingCueCard = cueCard;
+  speakingDisplayPrompt = cueCard;
   speakingTranscript = manualText;
   speakingMetadata = null;
 
@@ -3682,28 +4270,96 @@ async function startSpeakingGradingManual() {
       pauses: [], volume_variance: 0.25, wpm: 150,
       ...textStats
     };
-
-    const sysPrompt = buildSpeakingSystemPrompt();
-    const usrPrompt = buildSpeakingUserPrompt(cueCard, manualText, manualMeta);
-    const rawResponse = await callAPI(sysPrompt, usrPrompt);
-    const result = parseResponse(rawResponse);
-
-    hideLoading();
-
-    if (result.success) {
-      speakingResult = result.data;
-      renderSpeakingResult(result.data, cueCard, manualText, manualMeta);
-      document.getElementById('spExportBtn').style.display = 'inline-flex';
-    } else {
-      document.getElementById('speakingGradingView').classList.add('active');
-      document.getElementById('spFallbackArea').innerHTML = `<div class="fallback-box"><div class="fallback-title">⚠️ JSON 解析失败</div><textarea class="fallback-textarea" readonly>${escHtml(rawResponse)}</textarea></div>`;
-      renderSpeakingSidebar({}, manualMeta);
-    }
+    await scoreAndRenderSpeaking('p2', cueCard, manualText, manualMeta);
   } catch (err) {
     hideLoading();
-    if (err.message === 'API_KEY_MISSING') { showApiKeyModal(); }
-    else { alert('评分出错: ' + err.message); }
-    document.getElementById('speakingInputPanel').classList.remove('hidden');
+    isSpeakingGrading = false;
+    handleSpeakingError(err);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// SPEAKING: QA (Part 1/3) 会话批量评分
+// ══════════════════════════════════════════════════════════════
+function aggregateSpeakingSessionMeta(results, answersText) {
+  const t = analyzeTranscript(answersText);
+  let allDur = 0, audioDur = 0, pauseCount = 0, pauseTotal = 0, vvAcc = 0;
+  results.forEach(r => {
+    const a = r.audioMeta || {};
+    const d = a.duration_seconds || Math.round((r.text.split(/[\s\n\r]+/).filter(Boolean).length) / 2.5) || 1;
+    allDur += d;
+    if (r.item && r.item.audioBlob) {
+      audioDur += d;
+      pauseCount += a.pause_count || 0;
+      pauseTotal += a.pause_total_duration || 0;
+      vvAcc += (a.volume_variance || 0.25) * d;
+    }
+  });
+  const wpm = allDur > 0 ? Math.round(t.wordCount / (allDur / 60)) : 150;
+  const volumeVariance = audioDur > 0 ? +(vvAcc / audioDur).toFixed(2) : 0.25;
+  return {
+    duration_seconds: Math.round(allDur),
+    pause_count: pauseCount,
+    pause_total_duration: +pauseTotal.toFixed(1),
+    pause_ratio: audioDur > 0 ? +(pauseTotal / audioDur).toFixed(3) : 0,
+    pauses: [],
+    volume_variance: volumeVariance,
+    wpm: wpm,
+    ...t
+  };
+}
+
+async function runSpeakingQASessionGrading() {
+  if (!speakingSession || !qaAllAnswered()) return;
+  const sess = speakingSession;
+  const hasAudio = sess.items.some(it => it.audioBlob);
+  if (!localStorage.getItem('deepseek_api_key')) { showApiKeyModal(); return; }
+  if (hasAudio && !localStorage.getItem('groq_api_key')) { showApiKeyModal(); return; }
+
+  isSpeakingGrading = true;
+  recState = REC_STATE.SAVED;
+  updateRecButtons();
+
+  document.getElementById('speakingInputPanel').classList.add('hidden');
+  document.getElementById('speakingGradingView').classList.remove('active');
+  document.getElementById('spFallbackArea').innerHTML = '';
+  showLoading('speaking');
+
+  try {
+    const results = [];
+    for (let i = 0; i < sess.items.length; i++) {
+      const it = sess.items[i];
+      document.getElementById('loadingTips').textContent = '正在转写第 ' + (i + 1) + '/' + sess.items.length + ' 题...';
+      let text = '';
+      let audioMeta = null;
+      if (it.audioBlob) {
+        audioMeta = await analyzeAudio(it.audioBlob);
+        const stt = await callGroqWhisper(it.audioBlob);
+        text = (stt && stt.text) || '';
+      } else {
+        text = it.manualText;
+        audioMeta = {
+          duration_seconds: Math.round(it.manualText.split(/[\s\n\r]+/).filter(Boolean).length / 2.5),
+          pause_count: 0, pause_total_duration: 0, pause_ratio: 0, pauses: [], volume_variance: 0.25
+        };
+      }
+      if (!text.trim()) {
+        throw new Error('第 ' + (i + 1) + ' 题转写为空，请重录该题');
+      }
+      results.push({ item: it, text: text.trim(), audioMeta });
+    }
+
+    const combined = sess.items.map((it, i) => 'Q' + (i + 1) + '. ' + it.question + '\nA' + (i + 1) + '. ' + results[i].text).join('\n\n');
+    const answersText = results.map(r => r.text).join('\n');
+    const sessionMeta = aggregateSpeakingSessionMeta(results, answersText);
+    speakingTranscript = combined;
+    speakingDisplayPrompt = buildSpeakingQuestionBlock(sess);
+    speakingMetadata = null;
+    await scoreAndRenderSpeaking(speakingPart, speakingDisplayPrompt, combined, sessionMeta);
+  } catch (err) {
+    hideLoading();
+    isSpeakingGrading = false;
+    handleSpeakingError(err);
   }
 }
 
@@ -3778,17 +4434,23 @@ function resetSpeakingSidebar() {
 // ══════════════════════════════════════════════════════════════
 // SPEAKING: RESULT RENDERING
 // ══════════════════════════════════════════════════════════════
-function renderSpeakingResult(json, cueCard, transcript, meta) {
+function renderSpeakingResult(json, displayPrompt, transcript, meta, part) {
+  part = part || 'p2';
+  const cfg = SPEAKING_PART_CONFIG[part] || SPEAKING_PART_CONFIG.p2;
   document.getElementById('speakingInputPanel').classList.add('hidden');
   document.getElementById('speakingGradingView').classList.add('active');
 
-  // Sidebar
+  // 侧边栏
   renderSpeakingSidebar(json.evaluation_justification || {}, meta, json.overall);
 
-  // Tab 1: Overview
+  // 概览标签与题面
+  const typeLabelEl = document.getElementById('spOverviewTaskType');
+  if (typeLabelEl) typeLabelEl.textContent = cfg.overviewLabel;
   const topic = json.prompt_analysis?.core_topic || '雅思口语';
   document.getElementById('spOverviewTopic').textContent = topic;
-  document.getElementById('spOverviewCueCard').textContent = cueCard;
+  document.getElementById('spOverviewCueCard').textContent = displayPrompt || '';
+
+  applySpeakingTabs(part);
 
   const dims = ['fc','lr','gra','pronunciation'];
   const labels = ['流利度与连贯性', '词汇资源', '语法多样性与准确性', '发音'];
@@ -3805,13 +4467,13 @@ function renderSpeakingResult(json, cueCard, transcript, meta) {
   });
   document.getElementById('spBandCardsContainer').innerHTML = cardsHtml;
 
-  // Tab 2: Transcript
+  // Transcript
   const wordCount = meta.wordCount || 0;
   document.getElementById('spTranscriptMeta').textContent = `${wordCount} 词 · 转写完成 · ${meta.duration_seconds||'?'}秒`;
   const annotated = json.transcript_annotated || transcript;
   document.getElementById('spTranscriptBody').innerHTML = formatEssayParagraphs(annotated);
 
-  // Tab 3: Grammar
+  // Grammar
   const issues = json.grammar_issues_list || [];
   if (issues.length === 0) {
     document.getElementById('spGrammarList').innerHTML = '<div style="font-size:13px;color:var(--text-tertiary);padding:20px;text-align:center">✅ 本次分析暂未检测到显著语法问题</div>';
@@ -3823,11 +4485,13 @@ function renderSpeakingResult(json, cueCard, transcript, meta) {
     document.getElementById('spGrammarList').innerHTML = gHtml;
   }
 
-  // Tab 4: Fluency
+  // Fluency
   renderFluencyCharts(meta, json.feedback?.fluency_analysis || '');
 
-  // Tab 5: Upgrades
-  renderSpeakingUpgrades(json.transcript_upgrades);
+  // Upgrades（仅 P2 生成）
+  if (cfg.upgrades) {
+    renderSpeakingUpgrades(json.transcript_upgrades);
+  }
 
   // Tab 6: Feedback (was Tab 5)
   const fb = json.feedback || {};
@@ -3855,6 +4519,27 @@ function renderSpeakingResult(json, cueCard, transcript, meta) {
   switchSpeakingTab(document.querySelector('#speakingGradingView .tab'), 'sp-tab-overview');
 }
 
+function applySpeakingTabs(part) {
+  const cfg = SPEAKING_PART_CONFIG[part] || SPEAKING_PART_CONFIG.p2;
+  const vis = cfg.tabs || SPEAKING_PART_CONFIG.p2.tabs;
+  const pairs = [
+    ['spTabOverview', 'overview'], ['spTabTranscript', 'transcript'], ['spTabGrammar', 'grammar'],
+    ['spTabFluency', 'fluency'], ['spTabUpgrades', 'upgrades'], ['spTabFeedback', 'feedback'], ['spTabActions', 'actions']
+  ];
+  let activeHidden = false;
+  pairs.forEach(([btnId, key]) => {
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
+    const show = vis.indexOf(key) !== -1;
+    btn.style.display = show ? '' : 'none';
+    if (!show && btn.classList.contains('active')) activeHidden = true;
+  });
+  if (activeHidden) {
+    const ov = document.getElementById('spTabOverview');
+    if (ov) switchSpeakingTab(ov, 'sp-tab-overview');
+  }
+}
+
 function switchSpeakingTab(el, tabId) {
   const tabsContainer = el.closest('.grading-view').querySelector('.tabs');
   const contentContainer = el.closest('.grading-view');
@@ -3869,6 +4554,7 @@ function switchSpeakingTab(el, tabId) {
 // ══════════════════════════════════════════════════════════════
 function renderSpeakingUpgrades(upgrades) {
   const container = document.getElementById('spUpgradeList');
+  if (!container) return;
   if (!upgrades || (!upgrades.band6 && !upgrades.band7)) {
     container.innerHTML = '<div style="font-size:13px;color:var(--text-tertiary);text-align:center;padding:20px">暂未生成升级范文</div>';
     return;
@@ -4032,8 +4718,19 @@ function drawPauseChart(meta) {
 // ══════════════════════════════════════════════════════════════
 let speakingTopicActiveCat = 'people';
 
-function openSpeakingTopicBank() {
-  speakingTopicActiveCat = (SPEAKING_TOPIC_CATEGORIES[0] || {}).id || 'people';
+function openSpeakingTopicBank(part) {
+  part = part || speakingPart || 'p2';
+  speakingBankPart = part;
+  const cfg = SPEAKING_PART_CONFIG[part] || SPEAKING_PART_CONFIG.p2;
+  const isP1P3 = part !== 'p2';
+  const sub = document.getElementById('speakingTopicModalSub');
+  const desc = document.getElementById('speakingTopicModalDesc');
+  if (sub) sub.textContent = isP1P3 ? cfg.overviewLabel : '2026.9-12 新题 · Part 2 Cue Card';
+  if (desc) desc.textContent = isP1P3
+    ? '点选一组题目，进入逐题录音（或文字）作答，全部答完一次性评分。'
+    : '点选一道 Cue Card，题目会自动填入答题区，然后照常录音评分。';
+  const data = speakingBankDataFor(part);
+  speakingTopicActiveCat = ((data.cats && data.cats[0]) || {}).id || '';
   renderSpeakingTopicBank();
   document.getElementById('speakingTopicModal').classList.add('active');
 }
@@ -4043,17 +4740,34 @@ function closeSpeakingTopicBank() {
 }
 
 function renderSpeakingTopicBank() {
+  const data = speakingBankDataFor(speakingBankPart);
   const catsEl = document.getElementById('speakingTopicCats');
-  catsEl.innerHTML = SPEAKING_TOPIC_CATEGORIES.map(function (c) {
-    return '<div class="speaking-topic-cat-chip' + (c.id === speakingTopicActiveCat ? ' active' : '') + '" onclick="speakingTopicActiveCat=\'' + c.id + '\';renderSpeakingTopicBank()">' + c.icon + ' ' + c.name + '<span style="opacity:.7;margin-left:4px">' + c.topics.length + '</span></div>';
-  }).join('');
-
-  const cat = SPEAKING_TOPIC_CATEGORIES.find(function (c) { return c.id === speakingTopicActiveCat; }) || SPEAKING_TOPIC_CATEGORIES[0];
   const grid = document.getElementById('speakingTopicGrid');
-  grid.innerHTML = cat.topics.map(function (t, i) {
+  if (data.isP1P3) {
+    // P1/P3：每组一个话题组卡片，直接展示（无需二级分类）
+    catsEl.innerHTML = '';
+    grid.innerHTML = (data.cats || []).map(function (g, i) {
+      const q0 = (g.questions && g.questions[0]) ? g.questions[0] : '';
+      const en = g.en ? (g.en + (q0 ? ' · ' : '')) : '';
+      return '<button class="speaking-topic-card" onclick="selectSpeakingTopic(\'' + g.id + '\',' + i + ')">' +
+        '<div class="speaking-topic-card-title">' + g.icon + ' ' + g.name + '</div>' +
+        '<div class="speaking-topic-card-en">' + escHtml(en + q0) + '</div>' +
+        '<div class="speaking-topic-card-date">📋 ' + (g.questions ? g.questions.length : 0) + ' 题一组</div>' +
+      '</button>';
+    }).join('');
+    grid.scrollTop = 0;
+    return;
+  }
+  // P2：分类 chip + Cue Card 网格
+  catsEl.innerHTML = (data.cats || []).map(function (c) {
+    return '<div class="speaking-topic-cat-chip' + (c.id === speakingTopicActiveCat ? ' active' : '') + '" onclick="speakingTopicActiveCat=\'' + c.id + '\';renderSpeakingTopicBank()">' + c.icon + ' ' + c.name + '<span style="opacity:.7;margin-left:4px">' + (c.topics || []).length + '</span></div>';
+  }).join('');
+  const cat = (data.cats || []).find(function (c) { return c.id === speakingTopicActiveCat; }) || (data.cats || [])[0];
+  if (!cat) { grid.innerHTML = ''; return; }
+  grid.innerHTML = (cat.topics || []).map(function (t, i) {
     return '<button class="speaking-topic-card" onclick="selectSpeakingTopic(\'' + cat.id + '\',' + i + ')">' +
       '<div class="speaking-topic-card-title">' + t.zh + '</div>' +
-      '<div class="speaking-topic-card-en">' + t.cue.split('\n')[0] + '</div>' +
+      '<div class="speaking-topic-card-en">' + escHtml(t.cue.split('\n')[0]) + '</div>' +
       '<div class="speaking-topic-card-date">📅 ' + t.date + ' 出现</div>' +
     '</button>';
   }).join('');
@@ -4061,8 +4775,18 @@ function renderSpeakingTopicBank() {
 }
 
 function selectSpeakingTopic(catId, idx) {
-  const cat = SPEAKING_TOPIC_CATEGORIES.find(function (c) { return c.id === catId; });
-  if (!cat || !cat.topics[idx]) return;
+  const data = speakingBankDataFor(speakingBankPart);
+  if (data.isP1P3) {
+    const group = (data.cats || []).find(function (g) { return g.id === catId; }) || (data.cats || [])[idx];
+    if (!group) return;
+    closeSpeakingTopicBank();
+    if (speakingPart !== speakingBankPart) switchSpeakingPart(speakingBankPart);
+    startSpeakingQASession(group);
+    return;
+  }
+  const cat = (data.cats || []).find(function (c) { return c.id === catId; });
+  if (!cat || !cat.topics || !cat.topics[idx]) return;
+  if (speakingPart !== 'p2') switchSpeakingPart('p2');
   document.getElementById('cueCardInput').value = cat.topics[idx].cue;
   closeSpeakingTopicBank();
   document.getElementById('cueCardInput').focus();
@@ -4100,6 +4824,7 @@ function simonGetProg() {
 function simonSaveProg(p) { try { localStorage.setItem('simon_lesson_progress', JSON.stringify(p)); } catch (e) {} }
 
 function openSimonTask() {
+  if (speakingPart !== 'p2') switchSpeakingPart('p2');
   simonList = simonFlatten();
   simonShowSample = false;
   if (!simonList.length) return;
@@ -4161,6 +4886,7 @@ function simonResetAll() {
 
 // 填入"此题"到答题区
 function simonPracticeFill() {
+  if (speakingPart !== 'p2') switchSpeakingPart('p2');
   const t = simonCur();
   document.getElementById('cueCardInput').value = simonCueText(t.ex);
   simonTaskClose();
@@ -4169,6 +4895,7 @@ function simonPracticeFill() {
 
 // 随机换一道同类真题（把 25 道题库里的题喂给示范所练类型）
 function simonPracticeReal() {
+  if (speakingPart !== 'p2') switchSpeakingPart('p2');
   const t = simonCur();
   const cid = SIMON_CAT2TOPIC[t.lesson.category];
   if (!cid) return;
@@ -4229,7 +4956,7 @@ function renderSimonTask() {
   if (ex.points && ex.points.length) {
     html += '<ul class="simon-cue-pts">' + ex.points.map(function (pt) { return '<li>' + simonEsc(pt) + '</li>'; }).join('') + '</ul>';
   } else if (isP1) {
-    html += '<div style="font-size:12px;color:var(--text-tertiary);margin-top:-6px">Part 1 短问答 · 建议跟读示例为主（本工具录音评分为 Part 2 独白）。</div>';
+    html += '<div style="font-size:12px;color:var(--text-tertiary);margin-top:-6px">Part 1 短问答 · 建议跟读示例记忆；如需逐题评分，请到口语工作区切「Part 1 · 问答」用题库作答。</div>';
   }
 
   html += '<div class="simon-action-row">' +
@@ -4277,10 +5004,14 @@ function resetSpeakingToEdit() {
   document.getElementById('speakingInputPanel').classList.remove('hidden');
   document.getElementById('spExportBtn').style.display = 'none';
   document.getElementById('spFallbackArea').innerHTML = '';
+  if (speakingPart !== 'p2' && speakingSession) {
+    renderQaSession(); // 保留已答片段，便于重录某题后整批重提
+  }
   window.scrollTo(0, 0);
 }
 
 function loadSpeakingSample() {
+  if (speakingPart !== 'p2') switchSpeakingPart('p2');
   const sampleCueCard = 'Describe a memorable trip you have taken.\nYou should say:\n- Where you went\n- Who you went with\n- What you did there\n- And explain why it was memorable';
   document.getElementById('cueCardInput').value = sampleCueCard;
 
@@ -4329,17 +5060,22 @@ function downloadSpeakingMarkdown() {
   const ns = json.next_steps || {};
   const actions = [ns.action_1, ns.action_2, ns.action_3].filter(a=>a).map((a,i) => `${i+1}. ${safe(a)}`).join('\n')||'-';
 
+  const part = speakingPart;
+  const pcfg = SPEAKING_PART_CONFIG[part] || SPEAKING_PART_CONFIG.p2;
+  const promptText = speakingDisplayPrompt || speakingCueCard || '';
+  const qHeading = (part && part !== 'p2') ? '## 📝 题目（逐题）' : '## 📝 Cue Card 题目';
+
   const markdown = `# IELTS 口语评分报告
 
 **评分时间**：${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}
-**任务类型**：Speaking Part 2 (Cue Card)
+**任务类型**：${pcfg.taskType}
 **总分**：**${overall}**
 
 ---
 
-## 📝 Cue Card 题目
+${qHeading}
 
-> ${safe(speakingCueCard)}
+> ${safe(promptText)}
 
 ---
 
