@@ -40,8 +40,6 @@ html{font-family:var(--font-body);background:var(--bg);color:var(--text-primary)
   .topbar-nav{display:flex;align-items:center;gap:24px}
   .topbar-nav a{font-size:13px;color:var(--text-secondary);text-decoration:none;font-weight:500;transition:color .15s;cursor:pointer}
   .topbar-nav a:hover{color:var(--text-primary)}
-  .topbar-user{display:flex;align-items:center;gap:10px}
-  .topbar-avatar{width:32px;height:32px;border-radius:50%;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--accent);font-weight:600;cursor:pointer}
   /* 返回链接的样式从内联属性挪到这里：内联会压过媒体查询，手机上改不动 */
   .topbar-back{font-size:14px;color:var(--text-secondary);cursor:pointer;margin-right:8px;text-decoration:none;font-weight:500;align-self:center}
   .back-short{display:none}
@@ -58,9 +56,7 @@ html{font-family:var(--font-body);background:var(--bg);color:var(--text-primary)
     .topbar-title{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
     .topbar-nav{gap:6px;flex-shrink:0}
     .topbar-nav a{white-space:nowrap;padding:8px 4px;font-size:13px}
-    .topbar-user{flex-shrink:0}
     .sidebar-toggle{width:40px;height:40px;font-size:20px}
-    .topbar-avatar{width:40px;height:40px;font-size:14px}
   }
 
   /* ─── Layout ─── */
@@ -1098,15 +1094,12 @@ html{font-family:var(--font-body);background:var(--bg);color:var(--text-primary)
     <span class="topbar-title" id="topbarTitle">IELTS AI Grader</span>
   </div>
   <nav class="topbar-nav">
-    <button class="sidebar-toggle" id="sidebarToggleBtn" onclick="toggleSidebar()" title="侧边栏">☰</button>
+    <button class="sidebar-toggle" id="sidebarToggleBtn" onclick="toggleSidebar()" title="侧边栏" style="display:none">☰</button>
     <button class="sidebar-toggle" id="speakingSidebarToggle" onclick="toggleSpeakingSidebar()" title="侧边栏" style="display:none">☰</button>
     <button class="sidebar-toggle" id="listeningSidebarToggle" onclick="toggleListeningSidebar()" title="侧边栏" style="display:none">☰</button>
     <button class="sidebar-toggle" id="vocabularySidebarToggle" onclick="toggleVocabularySidebar()" title="侧边栏" style="display:none">☰</button>
     <a onclick="showApiKeyModal()">⚙ 设置</a>
   </nav>
-  <div class="topbar-user">
-    <div class="topbar-avatar" onclick="showApiKeyModal()" title="设置 API Key">S</div>
-  </div>
 </header>
 
 <!-- ═══ Home Page（左入口栏 + 右 60 天学习计划） ═══ -->
@@ -2277,6 +2270,9 @@ function goHome() {
   document.getElementById('vocabularyWorkspace').classList.remove('active');
   document.getElementById('topbarTitle').textContent = 'IELTS AI Grader';
   document.getElementById('btnBackHome').style.display = 'none';
+  // 首页没有侧边栏抽屉，把四个工作区的 ☰ 全部藏掉（☰ 只在进入工作区后才有用）
+  document.getElementById('sidebarToggleBtn').style.display = 'none';
+  document.getElementById('speakingSidebarToggle').style.display = 'none';
   document.getElementById('listeningSidebarToggle').style.display = 'none';
   document.getElementById('vocabularySidebarToggle').style.display = 'none';
   // Stop any playing audio
