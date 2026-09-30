@@ -23,7 +23,9 @@
     --band9:#16a085;--band8:#15803d;--band7:#65a30d;--band6:#ca8a04;--band5:#ea580c;--band4:#dc2626;
     --correct:#16a085;--weak:#c0392b;--suggest:#2980b9;
   }
-  html{font-family:var(--font-body);background:var(--bg);color:var(--text-primary);line-height:1.6;-webkit-font-smoothing:antialiased}
+  /* touch-action:manipulation = 允许拖动和双指缩放，但关掉"双击放大"（误触的主要来源）。
+   刻意不写 user-scalable=no —— 那会连用户主动的放大一起禁掉，需要放大看小字的人就用不了了。 */
+html{font-family:var(--font-body);background:var(--bg);color:var(--text-primary);line-height:1.6;-webkit-font-smoothing:antialiased;touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:100%}
   body{min-height:100vh;display:flex;flex-direction:column}
 
   /* ─── Top Nav ─── */
@@ -40,9 +42,41 @@
   .topbar-nav a:hover{color:var(--text-primary)}
   .topbar-user{display:flex;align-items:center;gap:10px}
   .topbar-avatar{width:32px;height:32px;border-radius:50%;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--accent);font-weight:600;cursor:pointer}
+  /* 返回链接的样式从内联属性挪到这里：内联会压过媒体查询，手机上改不动 */
+  .topbar-back{font-size:14px;color:var(--text-secondary);cursor:pointer;margin-right:8px;text-decoration:none;font-weight:500;align-self:center}
+  .back-short{display:none}
+
+  /* 手机端顶栏：必须压在一行内。
+     顶栏一旦换行变高，全站五处硬编码的 top:57px / calc(100vh - 57px) 全部错位。 */
+  @media(max-width:768px){
+    .topbar{padding:10px 12px;gap:8px}
+    .topbar-logo{display:none}
+    .topbar-brand{gap:8px;flex:1;min-width:0}
+    .topbar-back{margin-right:0;font-size:13px;white-space:nowrap;padding:8px 2px}
+    .back-long{display:none}
+    .back-short{display:inline}
+    .topbar-title{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+    .topbar-nav{gap:6px;flex-shrink:0}
+    .topbar-nav a{white-space:nowrap;padding:8px 4px;font-size:13px}
+    .topbar-user{flex-shrink:0}
+    .sidebar-toggle{width:40px;height:40px;font-size:20px}
+    .topbar-avatar{width:40px;height:40px;font-size:14px}
+  }
 
   /* ─── Layout ─── */
   .app{display:grid;grid-template-columns:280px 1fr;flex:1;gap:0}
+
+  /* ─── Sidebar ───
+     ⚠️ 这两条基础规则必须待在下面的 @media 之前。曾经它们被放在媒体查询之后，
+     同权重下"后出现的赢"，把移动端的 position:fixed 压回了 sticky ——
+     侧边栏因此不再滑出屏幕，而是在网格里占满一整行（787px 高），
+     把 main 挤到 y≈870，四个工作区在手机上都变成一片空白。 */
+  .sidebar{
+    padding:24px 20px;background:var(--surface);border-right:1px solid var(--border);
+    overflow-y:auto;max-height:calc(100vh - 57px);position:sticky;top:57px;
+  }
+  .sidebar-section{margin-bottom:28px}
+
   @media(max-width:1024px){.app{grid-template-columns:1fr}}
   @media(max-width:1024px){
     .app{grid-template-columns:1fr}
@@ -58,13 +92,6 @@
     .sidebar-toggle{display:none}
     .sidebar-backdrop{display:none}
   }
-
-  /* ─── Sidebar ─── */
-  .sidebar{
-    padding:24px 20px;background:var(--surface);border-right:1px solid var(--border);
-    overflow-y:auto;max-height:calc(100vh - 57px);position:sticky;top:57px;
-  }
-  .sidebar-section{margin-bottom:28px}
   .sidebar-heading{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-tertiary);margin-bottom:12px;padding:0 4px}
 
   .band-overview{display:flex;flex-direction:column;gap:10px}
@@ -116,6 +143,12 @@
 
   /* ─── Main ─── */
   .main{padding:32px;overflow-y:auto;max-height:calc(100vh - 57px)}
+  /* 紧跟在基础规则后面写覆盖，别放到别处的媒体查询里（同权重靠顺序定胜负） */
+  @media(max-width:1024px){
+    /* 去掉内层滚动容器：body + main 双重滚动在手机上很难用，
+       而且 100vh 会被地址栏算大，底部内容被浏览器栏挡住。让页面自然滚动。 */
+    .main{padding:16px;max-height:none;overflow-y:visible}
+  }
 
   /* ─── Task Toggle ─── */
   .task-toggle{display:flex;gap:0;margin-bottom:16px;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;width:fit-content;background:var(--surface-2)}
@@ -134,6 +167,16 @@
   }
   .sp-part-btn:hover{color:var(--text-secondary)}
   .sp-part-btn.active{background:var(--accent);color:#fff}
+  /* 三个按钮 width:fit-content 时约 370px，超过手机的可用宽，
+     会让 .main 内部出现横向滚动条。手机上改成等分占满。 */
+  @media(max-width:768px){
+    .sp-part-toggle{width:100%}
+    .sp-part-btn{flex:1;padding:9px 4px;font-size:12px;text-align:center}
+  }
+  /* Cue Card 标题行（原来布局写在内联 style 里，媒体查询改不动） */
+  .sp-cue-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+  .sp-cue-head label{margin:0}
+  .sp-cue-head-btns{display:flex;gap:8px;flex-shrink:0}
 
   /* ─── QA (Part 1/3) 答题队列面板 ─── */
   .qa-session-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
@@ -166,6 +209,9 @@
     background:var(--surface-2);color:var(--text-primary);transition:border-color .15s;
   }
   .input-panel textarea:focus{outline:none;border-color:var(--accent)}
+  /* 这两个原本把 font-size 写在内联 style 里，内联压过一切外部 CSS，
+     移动端媒体查询永远盖不住 —— 挪到 CSS 后两边都好改。桌面端维持原来的 13px。 */
+  #promptInput, #cueCardInput{font-size:13px}
   .input-panel textarea::placeholder{color:var(--text-tertiary)}
   .input-panel label{font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;display:block}
   .form-group{margin-bottom:16px}
@@ -181,6 +227,9 @@
   .btn-secondary:hover:not(:disabled){background:var(--border);color:var(--text-primary)}
   .btn-outline{background:transparent;color:var(--accent);border:1px solid var(--accent)}
   .btn-outline:hover:not(:disabled){background:var(--accent-soft)}
+  /* 听力模块的强调按钮：模块主题色（蓝），与绿色 .btn-primary 区分。此前被 HTML 引用但从未定义，实际渲染成无背景 */
+  .btn-accent{background:var(--suggest);color:#fff}
+  .btn-accent:hover:not(:disabled){background:#217dbb;box-shadow:var(--shadow-md)}
 
   /* ─── Loading ─── */
   .loading-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(246,245,240,.85);z-index:500;align-items:center;justify-content:center;flex-direction:column}
@@ -202,6 +251,21 @@
     cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1.5px;transition:all .15s;white-space:nowrap;
   }
   .tab:hover{color:var(--text-secondary)}
+  /* 写作/口语各 7 个 Tab（总宽 ~700-760px），本来靠 .tabs 横向滚动，
+     但触屏上没有任何"还能往右滑"的提示，后面几个看起来像不存在。
+     用遮罩做右侧渐隐暗示 + 手机上收紧每个 Tab 的宽度。 */
+  /* 只作用于结果页那两条 7 个 Tab 的横条（听力和背单词只有 2 个 Tab、不会溢出，
+     加渐隐反而会让底边框看起来缺了一截） */
+  .grading-view .tabs{
+    -webkit-mask-image:linear-gradient(to right,#000 calc(100% - 28px),transparent);
+    mask-image:linear-gradient(to right,#000 calc(100% - 28px),transparent);
+    scrollbar-width:none;
+  }
+  .grading-view .tabs::-webkit-scrollbar{display:none}
+  @media(max-width:768px){
+    .tab{padding:10px 12px;font-size:12.5px}
+    .tabs{margin-bottom:16px}
+  }
   .tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
   .tab-content{display:none}
   .tab-content.active{display:block}
@@ -234,13 +298,10 @@
   .ielts-vocab{background:rgba(142,68,173,.1);border-bottom:2.5px solid #8e44ad;color:#8e44ad;border-radius:3px;padding:1px 3px;cursor:pointer;position:relative}
   .ielts-suggest{background:rgba(41,128,185,.1);border-bottom:2.5px solid var(--suggest);color:var(--suggest);border-radius:3px;padding:1px 3px;cursor:pointer;position:relative}
 
-  /* Annotation tooltips on hover */
-  .ielts-good:hover::after,
-  .ielts-grammar:hover::after,
-  .ielts-vocab:hover::after,
-  .ielts-suggest:hover::after,
-  .ielts-fluency:hover::after,
-  .ielts-pronounce:hover::after{
+  /* Annotation tooltips：桌面用 :hover，触屏用点击加的 .tip-open。
+     触屏没有 hover —— 只写 :hover 的话手机上完全看不到 AI 批注，
+     而批注正是这个应用的核心价值。两个状态并列，不改变桌面行为。 */
+  :is(.ielts-good,.ielts-grammar,.ielts-vocab,.ielts-suggest,.ielts-fluency,.ielts-pronounce):is(:hover,.tip-open)::after{
     content:attr(data-comment);
     position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);
     background:#1a1a16;color:#fff;font-size:12px;font-weight:400;line-height:1.5;
@@ -248,18 +309,19 @@
     z-index:300;pointer-events:none;
     box-shadow:0 4px 12px rgba(0,0,0,.2);
   }
-  .ielts-good:hover::before,
-  .ielts-grammar:hover::before,
-  .ielts-vocab:hover::before,
-  .ielts-suggest:hover::before,
-  .ielts-fluency:hover::before,
-  .ielts-pronounce:hover::before{
+  :is(.ielts-good,.ielts-grammar,.ielts-vocab,.ielts-suggest,.ielts-fluency,.ielts-pronounce):is(:hover,.tip-open)::before{
     content:'';
     position:absolute;bottom:calc(100% + 2px);left:50%;transform:translateX(-50%);
     border:5px solid transparent;border-top-color:#1a1a16;
     z-index:300;pointer-events:none;
   }
-  .ielts-good:hover,.ielts-grammar:hover,.ielts-vocab:hover,.ielts-suggest:hover,.ielts-fluency:hover,.ielts-pronounce:hover{z-index:250}
+  :is(.ielts-good,.ielts-grammar,.ielts-vocab,.ielts-suggest,.ielts-fluency,.ielts-pronounce):is(:hover,.tip-open){z-index:250}
+  /* 手机上气泡别顶到屏幕外：窄屏改成相对自身定位的换行样式 */
+  @media(max-width:768px){
+    :is(.ielts-good,.ielts-grammar,.ielts-vocab,.ielts-suggest,.ielts-fluency,.ielts-pronounce):is(:hover,.tip-open)::after{
+      white-space:normal;width:max-content;max-width:min(260px,80vw);text-align:left;line-height:1.6;
+    }
+  }
 
   .hl-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)}
   .hl-legend-item{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-secondary);font-weight:500}
@@ -357,7 +419,8 @@
   }
   .grammar-accordion.open .grammar-chevron{transform:rotate(180deg);background:var(--accent);color:#fff}
   .grammar-body{max-height:0;overflow:hidden;transition:max-height .35s ease}
-  .grammar-accordion.open .grammar-body{max-height:800px}
+  /* 同上：800px 上限在手机上很容易被超（每条例子都会多折几行），改成不设上限 */
+  .grammar-accordion.open .grammar-body{max-height:none}
   .grammar-body-inner{padding:0 18px 18px 58px}
   .grammar-example{
     padding:14px 16px;background:var(--surface-2);border-radius:var(--radius);
@@ -567,26 +630,145 @@
   .stat-plain.warn{color:var(--weak)}
   .stat-plain.neutral{color:var(--suggest)}
 
-  /* ─── Home Page ─── */
-  .home-page{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 57px);padding:40px 24px;text-align:center}
+  /* ─── Home Page（左入口栏 + 右学习计划） ─── */
+  /* align-content:start 是必需的：手机上 grid 只有一列、入口栏和计划变成两行，
+     而 min-height:calc(100vh - 57px) + 默认的 align-content:stretch 会把多出来的高度
+     摊给这两行 —— 第一行（入口栏）被撑高，计划区被无故往下推 150 多像素。 */
+  .home-page{display:grid;grid-template-columns:260px 1fr;align-items:start;align-content:start;min-height:calc(100vh - 57px);text-align:left}
   .home-page.hidden{display:none}
-  .home-logo{font-size:56px;margin-bottom:8px}
-  .home-title{font-family:var(--font-display);font-size:36px;font-weight:700;margin-bottom:8px;letter-spacing:-.02em}
-  .home-subtitle{font-size:15px;color:var(--text-tertiary);margin-bottom:48px;max-width:500px;line-height:1.7}
-  .home-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:24px;max-width:1400px;width:100%}
-  @media(max-width:768px){.home-cards{grid-template-columns:1fr;gap:24px}.home-title{font-size:28px}}
-  .home-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:36px 28px;cursor:pointer;transition:all .25s ease;box-shadow:var(--shadow-sm);text-align:left;position:relative}
-  .home-card:hover{transform:translateY(-6px);box-shadow:var(--shadow-lg);border-color:var(--accent-mid)}
-  .home-card-icon{font-size:48px;margin-bottom:16px;display:block}
-  .home-card-name{font-family:var(--font-display);font-size:22px;font-weight:600;margin-bottom:8px}
-  .home-card-desc{font-size:13px;color:var(--text-secondary);line-height:1.7;margin-bottom:20px}
-  .home-card-features{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:24px}
-  .home-card-feat{font-size:11px;font-weight:500;padding:4px 10px;border-radius:12px;background:var(--accent-soft);color:var(--accent)}
-  .home-card-btn{display:inline-flex;align-items:center;gap:6px;padding:10px 24px;border-radius:var(--radius);font-size:13px;font-weight:600;border:none;cursor:pointer;transition:all .15s}
-  .home-card-btn.writing{background:var(--accent);color:#fff}
-  .home-card-btn.writing:hover{background:#234732;box-shadow:var(--shadow-md)}
-  .home-card-btn.speaking{background:var(--surface-2);color:var(--text-primary);border:1px solid var(--border)}
-  .home-card-btn.speaking:hover{background:var(--border)}
+
+  /* ─── Home Rail（左侧功能入口栏） ─── */
+  .home-rail{padding:24px 18px;background:var(--surface);border-right:1px solid var(--border);position:sticky;top:57px;max-height:calc(100vh - 57px);overflow-y:auto}
+  .home-rail-head{display:flex;align-items:center;gap:10px;margin-bottom:24px;padding:0 4px}
+  .home-rail-logo{font-size:28px;line-height:1}
+  .home-rail-title{font-family:var(--font-display);font-size:16px;font-weight:700;letter-spacing:-.01em}
+  .home-rail-sub{font-size:11px;color:var(--text-tertiary);margin-top:2px}
+  .home-rail-section{margin-bottom:24px}
+  .home-rail-heading{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-tertiary);margin-bottom:10px;padding:0 4px}
+  .home-rail-item{display:flex;align-items:flex-start;gap:10px;padding:12px 12px 12px 13px;border-radius:var(--radius);border:1px solid transparent;border-left:3px solid var(--border);cursor:pointer;transition:all .15s;margin-bottom:6px}
+  .home-rail-item:hover{background:var(--surface-2);border-color:var(--border);transform:translateX(2px)}
+  .home-rail-item.mode-writing{border-left-color:var(--accent)}
+  .home-rail-item.mode-speaking{border-left-color:#8e44ad}
+  .home-rail-item.mode-listening{border-left-color:#2980b9}
+  .home-rail-item.mode-vocabulary{border-left-color:#c9a227}
+  .home-rail-item-body{min-width:0}
+  .home-rail-item-name{font-size:13px;font-weight:600;color:var(--text-primary);line-height:1.4}
+  .home-rail-identity{display:flex;gap:6px;padding:0 4px}
+  .home-rail-id-btn{flex:1;padding:8px 6px;border-radius:var(--radius);border:1.5px solid var(--border);background:var(--surface-2);color:var(--text-secondary);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--font-body)}
+  .home-rail-id-btn:hover{border-color:var(--accent-mid)}
+  .home-rail-id-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+  .home-rail-id-static{flex:1;padding:8px 6px;border-radius:var(--radius);background:var(--surface-2);color:var(--text-secondary);font-size:12px;font-weight:600;text-align:center;white-space:nowrap}
+
+  /* ─── Study Plan（右区 60 天学习计划） ─── */
+  .home-plan{padding:32px;min-width:0}
+  .home-plan-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+  .home-plan-title{font-family:var(--font-display);font-size:24px;font-weight:700;letter-spacing:-.01em}
+  .home-plan-sub{font-size:13px;color:var(--text-secondary);margin-top:6px;line-height:1.6}
+  .plan-head-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .plan-sm-btn{padding:7px 12px;font-size:12px}
+  .plan-current-badge{font-size:12px;font-weight:600;padding:6px 12px;border-radius:12px;background:var(--accent-soft);color:var(--accent)}
+  .plan-complete-banner{margin-bottom:20px;padding:16px 20px;border-radius:var(--radius-lg);background:var(--accent-soft);border:1px solid var(--correct);color:var(--accent);font-size:14px;font-weight:600;text-align:center}
+
+  /* 总览：按阶段纵向堆叠；每个阶段是一块可折叠卡片，内部是"一天一横条" */
+  .plan-overview{display:block}
+  .plan-phase{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:14px;box-shadow:var(--shadow-sm);overflow:hidden}
+  .plan-phase-head{display:flex;align-items:center;gap:12px;width:100%;padding:14px 18px;background:none;border:none;cursor:pointer;font-family:var(--font-body);text-align:left;transition:background .15s}
+  .plan-phase-head:hover{background:var(--surface-2)}
+  .plan-phase-no{flex:0 0 auto;font-size:11px;font-weight:700;letter-spacing:.04em;padding:4px 10px;border-radius:10px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+  .plan-phase-title{flex:1 1 auto;min-width:0;font-size:15px;font-weight:600;color:var(--text-primary)}
+  .plan-phase-range{flex:0 0 auto;font-size:12px;color:var(--text-tertiary);white-space:nowrap}
+  .plan-phase-stat{flex:0 0 auto;font-size:12px;color:var(--text-secondary);white-space:nowrap}
+  .plan-phase-caret{flex:0 0 auto;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--surface-2);border:1px solid var(--border);color:var(--text-primary);font-size:16px;line-height:1;transition:transform .2s, background .15s, border-color .15s}
+  .plan-phase-head:hover .plan-phase-caret{background:var(--accent-soft);border-color:var(--accent-mid);color:var(--accent)}
+  .plan-phase.open .plan-phase-caret{transform:rotate(180deg);background:var(--accent-soft);border-color:var(--accent-mid);color:var(--accent)}
+  .plan-phase-body{display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease}
+  .plan-phase-body-inner{overflow:hidden;min-height:0}
+  .plan-phase.open .plan-phase-body{grid-template-rows:1fr}
+  .plan-phase.open .plan-phase-body-inner{border-top:1px solid var(--border)}
+  .plan-phase-body .plan-cell{border:none;border-bottom:1px solid var(--border);border-radius:0;box-shadow:none}
+  .plan-phase-body .plan-cell:last-child{border-bottom:none}
+
+  .plan-cell{display:flex;align-items:center;gap:12px;background:var(--surface);padding:12px 18px;cursor:pointer;transition:background .15s}
+  .plan-cell:hover{background:var(--surface-2)}
+  .plan-cell.is-current{background:var(--accent-soft)}
+  .plan-cell.is-current .plan-cell-day{color:var(--accent)}
+  /* 「定位当前天」/首次打开时，当前天横条做一次绿色脉冲高亮 */
+  @keyframes planCellFlash{
+    0%{background:var(--accent-mid);box-shadow:inset 0 0 0 2px var(--accent)}
+    100%{background:var(--accent-soft);box-shadow:inset 0 0 0 0 rgba(45,90,65,0)}
+  }
+  .plan-cell.flash{animation:planCellFlash 1.2s ease}
+  .plan-cell.is-done{background:var(--accent-soft)}
+  .plan-cell.is-empty{background:var(--surface-2)}
+  .plan-cell-day{flex:0 0 auto;min-width:52px;font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--text-primary)}
+  .plan-cell-tag{flex:0 0 auto;font-size:12px;padding:3px 10px;border-radius:10px;background:var(--surface-2);color:var(--text-secondary);white-space:nowrap}
+  .plan-cell-bar{flex:1 1 auto;height:6px;border-radius:3px;background:var(--border);overflow:hidden}
+  .plan-cell-meta{flex:0 0 auto;font-size:12px;color:var(--text-tertiary);text-align:right;white-space:nowrap}
+  .plan-cell.is-done .plan-cell-meta{color:var(--correct);font-weight:600}
+  /* 三色区分：进行中 = 蓝；已完成 = 青绿 */
+  .plan-cell-bar-fill{height:100%;width:0;background:var(--suggest);border-radius:3px;transition:width .25s}
+  .plan-cell.is-done .plan-cell-bar-fill{background:var(--correct)}
+
+  .plan-detail-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+  .plan-back-btn{font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer;background:none;border:none;padding:6px 0;font-family:var(--font-body);transition:color .15s}
+  .plan-back-btn:hover{color:var(--accent)}
+  .plan-day-title{font-family:var(--font-display);font-size:22px;font-weight:700}
+  .plan-day-target{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-secondary);margin-left:auto;flex-wrap:wrap}
+  .plan-num-input{width:56px;padding:6px 8px;border:1.5px solid var(--border);border-radius:var(--radius);font-family:var(--font-mono);font-size:13px;font-weight:600;background:var(--surface);color:var(--text-primary);text-align:center;outline:none;transition:border-color .15s}
+  .plan-num-input:focus{border-color:var(--accent)}
+  .plan-day-summary{font-size:13px;color:var(--text-secondary);margin-bottom:20px;padding:12px 16px;background:var(--surface-2);border-radius:var(--radius);line-height:1.6}
+  .plan-day-summary.over{background:rgba(192,57,43,.08);color:var(--weak);font-weight:600}
+  .plan-day-summary strong{font-family:var(--font-mono);font-size:14px;color:var(--text-primary)}
+  .plan-day-summary.over strong{color:var(--weak)}
+
+  .plan-task-list{display:flex;flex-direction:column;gap:10px}
+  .plan-task{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm);transition:all .15s}
+  .plan-task.done{background:var(--surface-2);opacity:.7}
+  .plan-task.done .plan-task-text{text-decoration:line-through}
+  .plan-task-check{width:18px;height:18px;flex-shrink:0;cursor:pointer;accent-color:var(--accent)}
+  .plan-task-text{flex:1;min-width:0;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--radius);font-family:var(--font-body);font-size:13px;background:var(--surface);color:var(--text-primary);outline:none;transition:border-color .15s}
+  .plan-task-text:focus{border-color:var(--accent)}
+  .plan-task-dur{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-tertiary);flex-shrink:0}
+  .plan-task-dur-input{width:48px;padding:6px 4px;border:1.5px solid var(--border);border-radius:var(--radius);font-family:var(--font-mono);font-size:12px;background:var(--surface);color:var(--text-primary);text-align:center;outline:none;transition:border-color .15s}
+  .plan-task-dur-input:focus{border-color:var(--accent)}
+  .plan-task-actions{display:flex;gap:4px;flex-shrink:0}
+  .plan-icon-btn{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text-secondary);font-size:12px;cursor:pointer;transition:all .12s}
+  .plan-icon-btn:hover:not(:disabled){border-color:var(--accent-mid);color:var(--text-primary)}
+  .plan-icon-btn:disabled{opacity:.3;cursor:not-allowed}
+  .plan-empty{padding:32px 20px;text-align:center;color:var(--text-tertiary);font-size:13px;background:var(--surface-2);border:1px dashed var(--border);border-radius:var(--radius-lg)}
+  .plan-add-row{margin-top:14px}
+  .plan-add-btn{padding:10px 18px;font-size:13px;font-weight:600;border-radius:var(--radius);border:1px dashed var(--accent-mid);background:var(--accent-soft);color:var(--accent);cursor:pointer;transition:all .15s;font-family:var(--font-body)}
+  .plan-add-btn:hover{background:var(--accent);color:#fff;border-style:solid}
+
+  /* 首页 ≤1024px：入口栏不再横向滚动，改网格排布，计划占满整宽 */
+  @media(max-width:1024px){
+    .home-page{grid-template-columns:1fr}
+    .home-rail{position:static;max-height:none;overflow:visible;display:block;padding:14px 16px;border-right:none;border-bottom:1px solid var(--border)}
+    .home-rail-head{display:none}      /* 顶栏已经在显示 IELTS AI Grader，这里不再重复一遍 */
+    /* minmax(140px,1fr)：390px 手机自然排成 2×2 四格（四个入口一屏全见），
+       1024px 平板自然排成一行四个。一条规则覆盖两档，也不用再让人猜"右边还能不能滑"。 */
+    .home-rail-section{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:0}
+    .home-rail-section + .home-rail-section{margin-top:10px}
+    .home-rail-heading{display:none}
+    .home-rail-item{margin-bottom:0;padding:10px 12px;align-items:center}
+    .home-rail-identity{grid-column:1 / -1;padding:0}   /* 身份切换独占一行，不再被挤到滚动区最右边 */
+    .home-rail-id-btn{padding:10px 12px;white-space:nowrap}
+    .home-plan{padding:20px 16px}
+  }
+  /* 手机端：阶段头允许折行，一天一行的横条收窄间距 */
+  @media(max-width:768px){
+    .home-rail-sub{display:none}
+    .home-rail-item-name{font-size:12px;white-space:nowrap}
+    .plan-phase-head{flex-wrap:wrap;gap:8px;padding:12px 14px}
+    .plan-phase-title{flex:1 1 100%;order:-1}
+    .plan-cell{gap:10px;padding:12px 14px}
+    .plan-cell-day{min-width:48px}
+    .plan-cell-tag{font-size:11px;padding:2px 8px}
+    .plan-task{flex-wrap:wrap}
+    .plan-task-text{flex:1 1 calc(100% - 28px)}
+    .plan-task-dur{margin-left:auto}
+    .plan-day-target{margin-left:0;width:100%}
+  }
 
   /* ─── Workspace Wrapper ─── */
   .workspace{display:none}
@@ -649,14 +831,6 @@
   .speaking-stat-label{font-size:12px;color:var(--text-secondary);font-weight:500}
   .speaking-stat-value{font-size:15px;font-weight:700;font-family:var(--font-mono);color:var(--text-primary)}
 
-  /* ─── Listening Home Card ─── */
-  .home-card-btn.listening{background:rgba(41,128,185,.1);color:#2980b9;border:1px solid rgba(41,128,185,.3)}
-  .home-card-btn.listening:hover{background:rgba(41,128,185,.18);box-shadow:var(--shadow-md)}
-
-  /* ─── Vocabulary Home Card ─── */
-  .home-card-btn.vocab{background:rgba(142,68,173,.1);color:#8e44ad;border:1px solid rgba(142,68,173,.3)}
-  .home-card-btn.vocab:hover{background:rgba(142,68,173,.18);box-shadow:var(--shadow-md)}
-
   /* ─── Listening Module ─── */
   .listening-search{width:100%;padding:12px 16px;border:1.5px solid var(--border);border-radius:var(--radius);font-family:var(--font-body);font-size:14px;background:var(--surface);color:var(--text-primary);margin-bottom:20px;outline:none;transition:border-color .15s}
   .listening-search:focus{border-color:var(--accent-mid)}
@@ -669,13 +843,25 @@
   .listening-cat-header .listening-cat-count{font-size:11px;font-weight:500;padding:2px 8px;border-radius:10px;background:var(--accent-soft);color:var(--accent);margin-left:auto}
   .listening-cat-accordion.open .listening-cat-header .listening-cat-chevron{transform:rotate(90deg)}
   .listening-cat-body{max-height:0;overflow:hidden;transition:max-height .3s ease}
-  .listening-cat-accordion.open .listening-cat-body{max-height:2000px}
+  /* 展开时不再用固定上限：背单词大纲复用了这个类，每个分类 100 个词约 3000px+，
+     原来 2000px 的上限会把约一半单词静默裁掉（桌面端也一样）。
+     展开态设为 none 作为兜底，保证任何路径进来的内容都不会被裁；
+     走 toggleListeningCat 时 JS 会设一个具体值，那层负责过渡动画。 */
+  .listening-cat-accordion.open .listening-cat-body{max-height:none}
   .listening-pair-row{display:grid;grid-template-columns:1.2fr auto 1.2fr .8fr;gap:12px;align-items:center;padding:10px 18px 10px 36px;border-top:1px solid var(--border);font-size:13px}
   .listening-pair-row:nth-child(even){background:var(--surface-2)}
   .listening-pair-q{font-weight:600;color:var(--text-primary)}
   .listening-pair-arrow{color:var(--text-tertiary);font-size:12px}
   .listening-pair-a{color:var(--accent)}
   .listening-pair-cn{color:var(--text-secondary);font-size:12px;text-align:right}
+  /* 手机上 4 列塞进 ~290px，每列只剩 ~56px，英文和中文都被压成一条 —— 改两行堆叠 */
+  @media(max-width:768px){
+    .listening-pair-row{grid-template-columns:auto 1fr auto;gap:4px 8px;padding:10px 14px}
+    .listening-pair-q{grid-column:1 / 3}
+    .listening-pair-arrow{grid-column:3;text-align:right}
+    .listening-pair-a{grid-column:1 / 3;grid-row:2}
+    .listening-pair-cn{grid-column:3;grid-row:2;text-align:right}
+  }
   .listening-cat-hidden{display:none}
   .listening-pair-hidden{display:none}
 
@@ -751,6 +937,19 @@
   .vocab-identity-avatar{font-size:48px;margin-bottom:12px;display:block}
   .vocab-identity-name{font-family:var(--font-display);font-size:20px;font-weight:700;margin-bottom:6px}
   .vocab-identity-progress{font-size:12px;color:var(--text-tertiary)}
+  /* 手机上原卡片每张约 420px 高（48px 头像 + padding:32px 20px），一屏放不下一个。
+     改成紧凑横排：头像 + 姓名 + 进度一行放完。首页的身份门复用同一套类，一并受益。 */
+  @media(max-width:768px){
+    .vocab-identity-screen{padding:20px 16px}
+    .vocab-identity-screen h3{font-size:21px}
+    .vocab-identity-screen p{margin-bottom:16px}
+    .vocab-identity-grid{gap:10px}
+    .vocab-identity-card{display:flex;align-items:center;gap:12px;padding:14px 16px;text-align:left}
+    .vocab-identity-card:hover{transform:none}
+    .vocab-identity-avatar{font-size:30px;margin-bottom:0;flex-shrink:0}
+    .vocab-identity-name{font-size:17px;margin-bottom:0;flex:1 1 auto}
+    .vocab-identity-progress{flex:0 0 auto}
+  }
 
   .vocab-search{width:100%;padding:12px 16px;border:1.5px solid var(--border);border-radius:var(--radius);font-family:var(--font-body);font-size:14px;background:var(--surface);color:var(--text-primary);margin-bottom:16px;outline:none;transition:border-color .15s}
   .vocab-search:focus{border-color:var(--accent-mid)}
@@ -771,6 +970,13 @@
   .vocab-word-row .vocab-flashcard-word{margin-bottom:0}
   .vocab-speak-btn{background:transparent;border:none;font-size:22px;cursor:pointer;color:var(--accent);padding:4px;line-height:1;border-radius:50%;transition:transform .15s,color .15s}
   .vocab-speak-btn:hover{transform:scale(1.25);color:#234732}
+  /* 36px 的长单词（10-14 字符）需要 220-280px，卡面在手机上只有 ~262px，
+     会溢出并撞上 🔊 按钮。缩小 + 允许断行。 */
+  @media(max-width:768px){
+    .vocab-flashcard-word{font-size:26px;overflow-wrap:anywhere}
+    .vocab-word-row{gap:6px}
+    .vocab-flashcard-face{padding:20px}
+  }
   .vocab-flashcard-ph{font-size:18px;color:var(--text-secondary);margin-bottom:6px;letter-spacing:.5px}
   .vocab-flashcard-pos{font-size:14px;color:var(--text-tertiary);margin-bottom:10px}
   .vocab-flashcard-backword{font-family:var(--font-mono);font-size:22px;font-weight:700;color:var(--text-primary);margin-bottom:10px;text-align:center}
@@ -810,11 +1016,75 @@
   .vocab-mastery-label span:last-child{font-weight:600;color:var(--text-primary)}
   .vocab-mastery-bar .band-bar-fill{background:var(--accent)}
 
-  .vocab-word-row{display:grid;grid-template-columns:1.2fr auto 1fr;gap:12px;align-items:center;padding:8px 18px 8px 36px;border-top:1px solid var(--border);font-size:13px}
-  .vocab-word-row:nth-child(even){background:var(--surface-2)}
+  /* 词汇大纲的词条行。曾经也叫 .vocab-word-row，与上面闪卡那一行同名 ——
+     同权重下后面的定义赢，于是 3 列网格形态也套到了闪卡单词行上，
+     把单词挤成 1/3 宽、还多了 36px 左内边距。改名消除冲突。 */
+  .vocab-list-row{display:grid;grid-template-columns:1.2fr auto 1fr;gap:12px;align-items:center;padding:8px 18px 8px 36px;border-top:1px solid var(--border);font-size:13px}
+  .vocab-list-row:nth-child(even){background:var(--surface-2)}
   .vocab-word-w{font-weight:600;color:var(--text-primary);font-family:var(--font-mono)}
   .vocab-word-pos{color:var(--text-tertiary);font-size:11px}
   .vocab-word-zh{color:var(--text-secondary);text-align:right}
+  /* 手机上 3 列塞进 ~290px，每列只剩 ~56px，改成两行堆叠 */
+  @media(max-width:768px){
+    .vocab-list-row{grid-template-columns:1fr auto;padding:10px 14px;gap:2px 10px}
+    .vocab-word-w{grid-column:1}
+    .vocab-word-pos{grid-column:2;text-align:right}
+    .vocab-word-zh{grid-column:1 / -1;text-align:left}
+  }
+
+  /* ─── 移动端：表单控件统一 16px ───
+     放在样式表最末尾是刻意的：这些类的基规则散落在文件各处（有的在后面），
+     同权重下靠"后出现的赢"，只有放最后才能整片覆盖住。
+     16px 是 iOS Safari 的门槛 —— 聚焦字号 <16px 的输入框会自动放大整个页面，
+     用户点到输入框就被放大、然后看不到全貌。 */
+  @media(max-width:768px){
+    .input-panel textarea,
+    #promptInput,
+    #cueCardInput,
+    .task-answer-input,
+    .fallback-textarea,
+    .mic-fallback textarea,
+    .modal-input,
+    .plan-task-text,
+    .plan-num-input,
+    .plan-task-dur-input,
+    .listening-search,
+    .vocab-search{font-size:16px}
+    /* 窄的数字框同步加宽，否则 16px 下两三位数会被挤出去 */
+    .plan-num-input{width:64px;padding:6px 4px}
+    .plan-task-dur-input{width:56px;padding:6px 2px}
+  }
+
+  /* ─── 移动端：卡片内边距与点击区 ───
+     同样放末尾，理由同上。
+     390px 下 .main 的 16px 内边距 + 卡片 24-32px 内边距，正文只剩 ~262px；
+     这些卡片层层套，内边距是复利式消耗宽度。 */
+  @media(max-width:768px){
+    .input-panel{padding:18px}
+    .essay-card{padding:18px}
+    .band-card{padding:16px}
+    .feedback-card{padding:16px}
+    .upgrade-card{padding:16px}
+    .task-card{padding:16px}
+    .listening-target-card{padding:16px}
+    .listening-result-card{padding:16px}
+    .modal-box{padding:20px}
+    .prompt-card{padding:14px 16px}
+
+    /* Cue Card 那一行：标签 + 两个按钮挤在一行时，标签会换行并和按钮撞在一起 */
+    .sp-cue-head{flex-wrap:wrap}
+    .sp-cue-head > label{flex:1 1 100%}
+    .sp-cue-head-btns{flex:1 1 100%}
+    .sp-cue-head-btns .btn{flex:1;padding:8px 6px;font-size:11.5px;white-space:nowrap}
+
+    /* 高频点击区：手机上手指没那么准，这几个每天都点 */
+    .plan-task-check{width:22px;height:22px}
+    .plan-icon-btn{width:36px;height:36px;font-size:13px}
+    .plan-task-dur-input{height:34px}
+    .vocab-cat-chip{padding:8px 14px}
+    .listening-cat-select label{padding:10px 12px}
+    .improve-tag{padding:5px 12px}
+  }
 
 </style>
 </head>
@@ -823,7 +1093,7 @@
 <!-- ═══ Top Bar ═══ -->
 <header class="topbar">
   <div class="topbar-brand">
-    <a id="btnBackHome" onclick="goHome()" style="display:none;font-size:14px;color:var(--text-secondary);cursor:pointer;margin-right:8px;text-decoration:none;font-weight:500">← 返回首页</a>
+    <a id="btnBackHome" onclick="goHome()" class="topbar-back" style="display:none"><span class="back-long">← 返回首页</span><span class="back-short">← 返回</span></a>
     <div class="topbar-logo">IELTS</div>
     <span class="topbar-title" id="topbarTitle">IELTS AI Grader</span>
   </div>
@@ -839,57 +1109,67 @@
   </div>
 </header>
 
-<!-- ═══ Home Page ═══ -->
+<!-- ═══ Home Page（左入口栏 + 右 60 天学习计划） ═══ -->
 <div class="home-page" id="homePage">
-  <div class="home-logo">🎓</div>
-  <h1 class="home-title">IELTS AI Grader</h1>
-  <p class="home-subtitle">AI 驱动的雅思智能评分工具 — 选择你需要的练习模式</p>
-  <div class="home-cards">
-    <div class="home-card" onclick="enterMode('writing')">
-      <span class="home-card-icon">✏️</span>
-      <div class="home-card-name">Writing · 写作批改</div>
-      <div class="home-card-desc">上传雅思作文，AI 考官从 TA/CC/LR/GRA 四维度评分并给出详细反馈。</div>
-      <div class="home-card-features">
-        <span class="home-card-feat">Task 1 &amp; 2</span>
-        <span class="home-card-feat">4 维度评分</span>
-        <span class="home-card-feat">语法批注</span>
+  <aside class="home-rail">
+    <div class="home-rail-head">
+      <span class="home-rail-logo">🎓</span>
+      <div>
+        <div class="home-rail-title">IELTS AI Grader</div>
+        <div class="home-rail-sub">雅思智能评分与练习</div>
       </div>
-      <button class="home-card-btn writing">开始写作 →</button>
     </div>
-    <div class="home-card" onclick="enterMode('speaking')">
-      <span class="home-card-icon">🎙️</span>
-      <div class="home-card-name">Speaking · 口语批改</div>
-      <div class="home-card-desc">录制口语回答，AI 从 FC/LR/GRA/P 四维度评分并分析流利度与发音。</div>
-      <div class="home-card-features">
-        <span class="home-card-feat">Part 1/2/3 全覆盖</span>
-        <span class="home-card-feat">逐题录音</span>
-        <span class="home-card-feat">流利度分析</span>
+
+    <div class="home-rail-section">
+      <div class="home-rail-heading">练习模式</div>
+      <div class="home-rail-item mode-writing" onclick="enterMode('writing')">
+        <div class="home-rail-item-body">
+          <div class="home-rail-item-name">Writing · 写作批改</div>
+        </div>
       </div>
-      <button class="home-card-btn speaking">开始口语 →</button>
-    </div>
-    <div class="home-card" onclick="enterMode('listening')">
-      <span class="home-card-icon">👂</span>
-      <div class="home-card-name">Listening · 听力同义替换</div>
-      <div class="home-card-desc">雅思听力高频同义替换词对游戏化练习，无需 AI，即开即玩。</div>
-      <div class="home-card-features">
-        <span class="home-card-feat">115 组高频同义</span>
-        <span class="home-card-feat">8 大场景分类</span>
-        <span class="home-card-feat">陷阱词参考</span>
+      <div class="home-rail-item mode-speaking" onclick="enterMode('speaking')">
+        <div class="home-rail-item-body">
+          <div class="home-rail-item-name">Speaking · 口语批改</div>
+        </div>
       </div>
-      <button class="home-card-btn listening">开始练习 →</button>
-    </div>
-    <div class="home-card" onclick="enterMode('vocabulary')">
-      <span class="home-card-icon">📚</span>
-      <div class="home-card-name">Vocabulary · 背单词</div>
-      <div class="home-card-desc">1000 个 G类雅思核心词，闪卡浏览 + 间隔重复记忆，无需 AI，即开即学。</div>
-      <div class="home-card-features">
-        <span class="home-card-feat">1000 核心词</span>
-        <span class="home-card-feat">G类场景</span>
-        <span class="home-card-feat">闪卡 + 间隔重复</span>
+      <div class="home-rail-item mode-listening" onclick="enterMode('listening')">
+        <div class="home-rail-item-body">
+          <div class="home-rail-item-name">Listening · 听力同义替换</div>
+        </div>
       </div>
-      <button class="home-card-btn vocab">开始背单词 →</button>
+      <div class="home-rail-item mode-vocabulary" onclick="enterMode('vocabulary')">
+        <div class="home-rail-item-body">
+          <div class="home-rail-item-name">Vocabulary · 背单词</div>
+        </div>
+      </div>
     </div>
-  </div>
+
+    <div class="home-rail-section">
+      <div class="home-rail-heading">👤 学习身份</div>
+      <div class="home-rail-identity" id="planIdentityToggle"></div>
+    </div>
+  </aside>
+
+  <section class="home-plan" id="homePlan">
+    <!-- 60 天总览 -->
+    <div class="plan-overview-wrap" id="planOverviewWrap" style="display:none">
+      <div class="home-plan-head">
+        <div>
+          <div class="home-plan-title">60 天学习计划</div>
+          <div class="home-plan-sub" id="planOverviewSub"></div>
+        </div>
+        <div class="plan-head-actions">
+          <span class="plan-current-badge" id="planCurrentBadge"></span>
+          <button class="btn btn-secondary plan-sm-btn" onclick="spLocateCurrent()">↺ 定位当前天</button>
+        </div>
+      </div>
+      <div id="planCompleteBanner"></div>
+      <div class="plan-overview" id="planOverview"></div>
+    </div>
+
+    <!-- 单日详情 -->
+    <div class="plan-detail-wrap" id="planDetailWrap" style="display:none"></div>
+  </section>
 </div>
 
 <!-- ═══ Loading Overlay ═══ -->
@@ -1012,7 +1292,7 @@
 
       <div class="form-group">
         <label>作文题目 / Essay Prompt</label>
-        <textarea id="promptInput" style="min-height:100px;background:var(--surface);border:1.5px solid var(--border);font-family:var(--font-body);font-size:13px;line-height:1.7;resize:vertical;padding:12px;border-radius:var(--radius)" placeholder="在此粘贴雅思作文题目..."></textarea>
+        <textarea id="promptInput" style="min-height:100px;background:var(--surface);border:1.5px solid var(--border);font-family:var(--font-body);line-height:1.7;resize:vertical;padding:12px;border-radius:var(--radius)" placeholder="在此粘贴雅思作文题目..."></textarea>
       </div>
 
       <div class="form-group">
@@ -1209,14 +1489,14 @@
       <!-- Part 2: Cue Card input -->
       <div id="cueInputGroup">
         <div class="form-group">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-            <label style="margin:0" id="spCueLabel">Cue Card 题目 / 话题卡</label>
-            <div style="display:flex;gap:8px;flex-shrink:0">
+          <div class="sp-cue-head">
+            <label id="spCueLabel">Cue Card 题目 / 话题卡</label>
+            <div class="sp-cue-head-btns">
               <button class="btn btn-outline" onclick="openSimonTask()" style="padding:6px 14px;font-size:12px">📖 Simon 示范任务</button>
               <button class="btn btn-outline" onclick="openSpeakingTopicBank('p2')" style="padding:6px 14px;font-size:12px">📚 口语题库</button>
             </div>
           </div>
-          <textarea id="cueCardInput" oninput="document.getElementById('spIdeaTip').style.display='none'" style="background:var(--surface);border:1.5px solid var(--border);font-family:var(--font-body);font-size:13px;line-height:1.7;resize:vertical;padding:12px;border-radius:var(--radius);width:100%;min-height:100px" placeholder="Describe a memorable trip you have taken. You should say: where you went, who you went with, what you did there, and explain why it was memorable."></textarea>
+          <textarea id="cueCardInput" oninput="document.getElementById('spIdeaTip').style.display='none'" style="background:var(--surface);border:1.5px solid var(--border);font-family:var(--font-body);line-height:1.7;resize:vertical;padding:12px;border-radius:var(--radius);width:100%;min-height:100px" placeholder="Describe a memorable trip you have taken. You should say: where you went, who you went with, what you did there, and explain why it was memorable."></textarea>
         </div>
         <!-- 答题思路卡（题库选题后显示）：同类型 Simon 骨架 + 高分词 -->
         <div id="spIdeaTip" style="display:none"></div>
@@ -1627,10 +1907,11 @@
 <script src="speaking-topics.js"></script>
 <script src="speaking-qa-topics.js"></script>
 <script src="simon-lessons.js"></script>
+<script src="study-plan-preset.js"></script>
 <script>
 // ══════════════════════════════════════════════════════════════
 // CONFIG & STATE
-const APP_VERSION = '2.11.0'; // + Simon 任务按场景分流：P1 问答示范(lesson2)可「试答这题」走QA评分; P2 独白示范不变
+const APP_VERSION = '2.12.0'; // + 60天学习计划：首页改版为「左功能入口栏 + 右60天计划」，逐日任务/时长目标/完成打勾，按 Eric·Sophia 身份隔离
 // ══════════════════════════════════════════════════════════════
 let currentTaskType = 'task2'; // 'task1' or 'task2'
 let gradingResult = null;
@@ -2003,6 +2284,10 @@ function goHome() {
   if (speakingAudioUrl) { URL.revokeObjectURL(speakingAudioUrl); speakingAudioUrl = null; }
   if (audioStream) { audioStream.getTracks().forEach(t => t.stop()); audioStream = null; }
   resetSpeakingSessionGlobals();
+  // 回到首页 = 回到 60 天计划页，并定位到当前天
+  planView = 'overview';
+  planDetailDay = null;
+  initStudyPlan({ locate: true });
   window.scrollTo(0, 0);
 }
 
@@ -3079,6 +3364,7 @@ function switchTab(el, tabId) {
 
 function toggleGrammar(el) {
   el.classList.toggle('open');
+  expandAccordionBody(el);   // 同理：.grammar-body 的 800px 上限会裁掉长内容
 }
 
 function resetToEdit() {
@@ -5267,7 +5553,23 @@ function renderListeningGlossary() {
 }
 
 function toggleListeningCat(el) {
-  el.parentElement.classList.toggle('open');
+  const acc = el.parentElement;
+  acc.classList.toggle('open');
+  expandAccordionBody(acc);
+}
+
+// 折叠面板的 max-height 是固定上限（.listening-cat-body 2000px / .grammar-body 800px），
+// 内容超出就被 overflow:hidden 静默吃掉。背单词大纲复用了 .listening-cat-body，
+// 每个分类 100 个词约 3000px+ —— 约一半单词看不到，桌面端也一样。
+// 展开时按实际高度设置，既保留过渡动画又不裁内容。
+function expandAccordionBody(acc) {
+  const body = acc.querySelector('.listening-cat-body, .grammar-body');
+  if (!body) return;
+  if (acc.classList.contains('open')) {
+    body.style.maxHeight = body.scrollHeight + 'px';
+  } else {
+    body.style.maxHeight = '';
+  }
 }
 
 function filterListeningGlossary() {
@@ -5954,7 +6256,7 @@ function renderVocabGlossary() {
     html += '</div>';
     html += '<div class="listening-cat-body">';
     words.forEach(w => {
-      html += '<div class="vocab-word-row">';
+      html += '<div class="vocab-list-row">';
       html += '<span class="vocab-word-w">' + escHtml(w.w) + '</span>';
       html += '<span class="vocab-word-pos">' + escHtml(w.pos) + '</span>';
       html += '<span class="vocab-word-zh">' + escHtml(w.zh) + '</span>';
@@ -6277,6 +6579,727 @@ function toggleVocabAutoSpeak() {
 }
 
 // ══════════════════════════════════════════════════════════════
+// 60 天学习计划（首页右区，纯客户端，零 API）
+//   数据：localStorage.study_plan_progress = { eric:{...}, sophia:{...} }
+//   每个身份 = { v, manualDay, seeded, days: { "1".."60": { target, tasks:[{id,text,min,done}] } } }
+//   身份不持久化：每次打开都重新选（planIdentity 仅存内存）
+//   关键：任务用稳定 id 标识，数组下标只表示显示顺序（删/移不会串行）
+// ══════════════════════════════════════════════════════════════
+
+const SP_KEY = 'study_plan_progress';
+const SP_DEFAULT_TARGET = 360;  // 每天默认目标时长，单位分钟（6 小时）
+const SP_DAYS = 60;
+const SP_NEW_TASK_MIN = 0;      // 新任务默认时长（分钟）—— 默认 0，时/分两个输入框各自独立，用户填多少算多少
+
+// 计划页当前开放的身份。Eric 的 G类 计划 2026-09-30 起暂时收起，入口栏不再出现他的按钮，
+// 已存下的 eric 计划也会被清掉（见 spPurgeRetiredIdentities）。底稿保留在
+// study-plan-preset-eric.js（该文件不加载）。要恢复：把 'eric' 加回这里，并把那份底稿贴回
+// study-plan-preset.js 的 STUDY_PLAN_PRESETS。
+const PLAN_IDENTITIES = ['sophia'];
+
+let planIdentity = null;        // PLAN_IDENTITIES 中的某一个 | null —— 计划自己的身份，不复用 vocabIdentity
+let spStore = null;             // 内存中的 { eric:{...}, sophia:{...} }，已归一化
+let planView = 'overview';      // 'overview' | 'detail'
+let planDetailDay = null;       // planView === 'detail' 时是 1..60
+let spSaveTimer = null;         // 文本/时长编辑的防抖句柄
+let spSeq = 0;                  // 任务 id 序号
+let planOpenPhases = null;      // 总览哪些阶段展开：null = 默认（只开当前天所在阶段），否则是下标数组。不落盘
+
+// ── 工具 ─────────────────────────────────────────────────────
+
+// 属性插值专用转义（escHtml 不转义引号，不能用于 value="..."）
+function spEscAttr(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function spNewTaskId() {
+  spSeq++;
+  return 't_' + Date.now().toString(36) + '_' + spSeq.toString(36);
+}
+
+function spFmtMin(m) {
+  m = Math.max(0, Math.round(Number(m) || 0));
+  const h = Math.floor(m / 60), mm = m % 60;
+  if (!h) return mm + 'm';
+  if (!mm) return h + 'h';
+  return h + 'h' + mm + 'm';
+}
+
+function spIdentityLabel(id) { return id === 'sophia' ? 'Sophia' : 'Eric'; }
+
+// ── 存储读写（形状校验 + try/catch，照 Simon 进度的范式） ──────
+
+// seeded：已经铺过的是「哪一份预设」，形如 'sophia@1'（null = 没铺过）。
+// 这里刻意存 key 而不是 boolean —— 预设可以是**后补的**：早先某个身份没有预设时，
+// boolean 会被写成 true 却没有铺任何内容，之后补上预设也永远铺不进去了（真实踩过）。
+// 存 key 还有个好处：预设内容大改后把 v 提一版，老用户能自动换成新底稿。
+function spEmptyPlan() { return { v: 1, manualDay: null, seeded: null, phases: [], days: {} }; }
+function spEmptyStore() { return { eric: spEmptyPlan(), sophia: spEmptyPlan() }; }
+
+// 已收起的身份：把 localStorage 里那份计划一并清掉，不再显示、也不占地方。
+// 每次启动都清是刻意的 —— 就算它被别处写回来（或有人手改了 localStorage），也不会重新冒出来。
+function spPurgeRetiredIdentities() {
+  let dirty = false;
+  Object.keys(spStore).forEach(function (id) {
+    if (PLAN_IDENTITIES.indexOf(id) !== -1) return;
+    const p = spStore[id];
+    if (p && (Object.keys(p.days).length || p.manualDay)) { spStore[id] = spEmptyPlan(); dirty = true; }
+  });
+  if (dirty) spSaveNow();
+}
+
+function spNormalizePlan(p) {
+  const out = spEmptyPlan();
+  if (!p || typeof p !== 'object' || Array.isArray(p)) return out;
+  const md = Number(p.manualDay);
+  out.manualDay = (Number.isInteger(md) && md >= 1 && md <= SP_DAYS) ? md : null;
+  // 必须带过，否则每次读取都会被当成"没铺过"而重新铺一遍。
+  // 旧版本存的是 boolean true，这里保留原样（而不是转成 null）：让它在下次铺预设时
+  // 被换成 key 标记，顺带把"当年没铺上"的用户补上。
+  out.seeded = (p.seeded === true) ? true : ((typeof p.seeded === 'string' && p.seeded) ? p.seeded : null);
+  // 阶段描述（可选）。白名单式带过：只留形状合法、不越界、且互不重叠的项；坏数据直接丢弃。
+  if (Array.isArray(p.phases)) {
+    const seen = [];
+    p.phases.forEach(function (ph) {
+      if (!ph || typeof ph !== 'object') return;
+      const from = Number(ph.from), to = Number(ph.to);
+      if (typeof ph.title !== 'string' || !ph.title) return;
+      if (!Number.isInteger(from) || !Number.isInteger(to) || from < 1 || to > SP_DAYS || from > to) return;
+      if (seen.some(function (r) { return from <= r[1] && to >= r[0]; })) return;  // 与已收录的重叠
+      seen.push([from, to]);
+      out.phases.push({ title: ph.title, from: from, to: to });
+    });
+    out.phases.sort(function (a, b) { return a.from - b.from; });
+  }
+  if (!p.days || typeof p.days !== 'object' || Array.isArray(p.days)) return out;
+  Object.keys(p.days).forEach(function (k) {
+    const d = Number(k);
+    if (!Number.isInteger(d) || d < 1 || d > SP_DAYS) return;   // 丢弃越界的天
+    const day = p.days[k];
+    if (!day || typeof day !== 'object') return;
+    const tgt = Number(day.target);
+    const norm = {
+      target: (Number.isFinite(tgt) && tgt > 0) ? Math.round(tgt) : SP_DEFAULT_TARGET,
+      tag: (typeof day.tag === 'string' && day.tag) ? day.tag : '',
+      tasks: []
+    };
+    if (Array.isArray(day.tasks)) {
+      day.tasks.forEach(function (t, i) {
+        if (!t || typeof t !== 'object') return;
+        const min = Number(t.min);
+        norm.tasks.push({
+          id: (typeof t.id === 'string' && t.id) ? t.id : ('t_legacy_' + d + '_' + i),
+          text: typeof t.text === 'string' ? t.text : '',
+          min: (Number.isFinite(min) && min >= 0) ? Math.round(min) : 0,
+          done: t.done === true
+        });
+      });
+    }
+    out.days[String(d)] = norm;
+  });
+  return out;
+}
+
+function spReadStore() {
+  let raw = null;
+  try { raw = JSON.parse(localStorage.getItem(SP_KEY) || 'null'); } catch (e) { raw = null; }
+  const store = spEmptyStore();
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return store;
+  store.eric = spNormalizePlan(raw.eric);      // 坏的那一侧被替换，另一侧保留
+  store.sophia = spNormalizePlan(raw.sophia);
+  return store;
+}
+
+function spWriteStore() {
+  try { localStorage.setItem(SP_KEY, JSON.stringify(spStore)); } catch (e) {}
+}
+
+function spSaveNow() {
+  if (spSaveTimer) { clearTimeout(spSaveTimer); spSaveTimer = null; }
+  spWriteStore();
+}
+
+function spSaveDebounced() {
+  if (spSaveTimer) clearTimeout(spSaveTimer);
+  spSaveTimer = setTimeout(function () { spSaveTimer = null; spWriteStore(); }, 400);
+}
+
+// 关页面时把防抖中的改动落盘
+window.addEventListener('beforeunload', function () { if (spSaveTimer) spSaveNow(); });
+
+// ── 模型访问 ─────────────────────────────────────────────────
+
+function spCurPlan() {
+  if (!planIdentity) return null;
+  if (!spStore) spStore = spReadStore();   // 自愈：正常流程由 initStudyPlan 载入，这里兜底
+  if (!spStore[planIdentity]) spStore[planIdentity] = spEmptyPlan();
+  return spStore[planIdentity];
+}
+
+// create=false 时只读，不落盘（避免"点开一天就写出一条空天"）
+// 天号必须校验：否则 planDetailDay 为 null 时会写出 days["null"] 这种垃圾键，
+// 被 spNormalizePlan 静默丢弃，表现为"刚加的任务刷新后消失"
+function spGetDay(d, create) {
+  const plan = spCurPlan();
+  const n = Number(d);
+  if (!plan || !Number.isInteger(n) || n < 1 || n > SP_DAYS) return null;
+  const k = String(n);
+  if (!plan.days[k] && create) plan.days[k] = { target: SP_DEFAULT_TARGET, tasks: [] };
+  return plan.days[k] || null;
+}
+
+function spDayTotals(day) {
+  const tasks = day ? day.tasks : [];
+  return {
+    n: tasks.length,
+    done: tasks.filter(function (t) { return t.done; }).length,
+    min: tasks.reduce(function (s, t) { return s + t.min; }, 0)
+  };
+}
+
+function spStoreStats(plan) {
+  let daysPlanned = 0, daysDone = 0, taskDone = 0, taskAll = 0, minutes = 0;
+  Object.keys(plan.days).forEach(function (k) {
+    const d = plan.days[k];
+    if (!d || !d.tasks.length) return;
+    daysPlanned++;
+    taskAll += d.tasks.length;
+    const dn = d.tasks.filter(function (t) { return t.done; }).length;
+    taskDone += dn;
+    minutes += d.tasks.reduce(function (s, t) { return s + t.min; }, 0);
+    if (dn === d.tasks.length) daysDone++;
+  });
+  return { daysPlanned: daysPlanned, daysDone: daysDone, taskDone: taskDone, taskAll: taskAll, minutes: minutes };
+}
+
+// ── 当前天：默认自动推进（第一个还有未勾选任务的天），manualDay 可手动钉住 ──
+
+function spAutoDay(plan) {
+  let firstIncomplete = null, lastActive = 0;
+  for (let d = 1; d <= SP_DAYS; d++) {
+    const day = plan.days[String(d)];
+    if (!day || !day.tasks.length) continue;   // 空天不算"未完成"，直接跳过
+    lastActive = d;
+    if (firstIncomplete === null && day.tasks.some(function (t) { return !t.done; })) firstIncomplete = d;
+  }
+  if (firstIncomplete !== null) return firstIncomplete;
+  if (!lastActive) return 1;                     // 还没安排任何一天 → Day 1
+  return Math.min(lastActive + 1, SP_DAYS);      // 已安排的都做完了 → 跳到下一天去安排/开始
+}
+
+function spCurrentDay(plan) {
+  const md = plan.manualDay;
+  return (Number.isInteger(md) && md >= 1 && md <= SP_DAYS) ? md : spAutoDay(plan);
+}
+
+// ── 初始化 / 渲染路由 ────────────────────────────────────────
+
+// 身份不持久化：每次打开都从"选身份"开始（和背单词模块的行为一致）。
+// 所以这里刻意不读 localStorage —— planIdentity 只在本次会话内存里。
+function initStudyPlan(opts) {
+  opts = opts || {};
+  // 计划页只开放 PLAN_IDENTITIES 里的身份：没有合法身份时直接落到第一个（通常只有 Sophia）
+  if (PLAN_IDENTITIES.indexOf(planIdentity) === -1) planIdentity = PLAN_IDENTITIES[0] || null;
+  spStore = spReadStore();
+  spPurgeRetiredIdentities();
+  spSeedPresetIfNeeded();   // 身份已就位，首次进入自动铺底稿（与切身份时同一条路径）
+  planView = 'overview';
+  planDetailDay = null;
+  renderStudyPlan({ locate: !!opts.locate });
+}
+
+function renderStudyPlan(opts) {
+  opts = opts || {};
+  renderHomeRailIdentity();
+  const ov = document.getElementById('planOverviewWrap');
+  const det = document.getElementById('planDetailWrap');
+  if (!ov || !det) return;
+
+  if (planView === 'detail' && planDetailDay) {
+    ov.style.display = 'none';
+    det.style.display = '';
+    renderPlanDetail();
+  } else {
+    det.style.display = 'none';
+    ov.style.display = '';
+    renderPlanOverview(opts);
+  }
+}
+
+function renderHomeRailIdentity() {
+  const el = document.getElementById('planIdentityToggle');
+  if (!el) return;
+  if (PLAN_IDENTITIES.length <= 1) {
+    // 只有一个身份（或没有）：不摆可点的按钮，改成一串静态标识
+    const id = PLAN_IDENTITIES[0];
+    el.innerHTML = id
+      ? '<div class="home-rail-id-static">👤 当前：' + spIdentityLabel(id) + '</div>'
+      : '';
+    return;
+  }
+  el.innerHTML = PLAN_IDENTITIES.map(function (id) {
+    return '<button class="home-rail-id-btn' + (planIdentity === id ? ' active' : '') + '"'
+      + ' onclick="spSelectIdentity(\'' + id + '\')">👤 ' + spIdentityLabel(id) + '</button>';
+  }).join('');
+}
+
+
+// ── 总览（60 格） ────────────────────────────────────────────
+
+function spCellParts(d, plan, cur) {
+  const day = plan.days[String(d)];
+  const t = spDayTotals(day);
+  const cls = ['plan-cell'];
+  if (d === cur) cls.push('is-current');
+  if (!t.n) cls.push('is-empty');
+  else if (t.done === t.n) cls.push('is-done');
+  const meta = !t.n ? '未安排'
+    : (t.done === t.n ? '✓ 全部完成 · ' + spFmtMin(t.min) : '已完成 ' + t.done + ' / ' + t.n);
+  const tag = (day && day.tag) ? day.tag : '';
+  return { cls: cls.join(' '), meta: meta, tag: tag, pct: t.n ? Math.round(t.done / t.n * 100) : 0 };
+}
+
+function spCellInner(d, parts) {
+  return '<div class="plan-cell-day">Day ' + d + '</div>'
+    + (parts.tag ? '<span class="plan-cell-tag">' + escHtml(parts.tag) + '</span>' : '')
+    + '<div class="plan-cell-bar"><div class="plan-cell-bar-fill" style="width:' + parts.pct + '%"></div></div>'
+    + '<div class="plan-cell-meta">' + parts.meta + '</div>';
+}
+
+// 阶段列表：预设里没有 phases（旧数据）时退化成单个隐式阶段
+function spPhasesFor(plan) {
+  if (plan && plan.phases && plan.phases.length) return plan.phases;
+  return [{ title: '60 天计划', from: 1, to: SP_DAYS }];
+}
+
+// 阶段内汇总（照 spStoreStats 的写法，只是天数范围换成 from..to）
+function spPhaseStats(plan, from, to) {
+  let daysPlanned = 0, daysDone = 0, taskDone = 0, taskAll = 0;
+  for (let d = from; d <= to; d++) {
+    const day = plan.days[String(d)];
+    if (!day || !day.tasks.length) continue;
+    daysPlanned++;
+    taskAll += day.tasks.length;
+    const dn = day.tasks.filter(function (t) { return t.done; }).length;
+    taskDone += dn;
+    if (dn === day.tasks.length) daysDone++;
+  }
+  return { daysPlanned: daysPlanned, daysDone: daysDone, taskDone: taskDone, taskAll: taskAll };
+}
+
+// 当前展开的阶段集合：planOpenPhases 为 null 时（默认）只开当前天所在的阶段
+function spCurrentOpenSet(phases, cur) {
+  if (planOpenPhases !== null) return planOpenPhases.slice();
+  const set = [];
+  for (let i = 0; i < phases.length; i++) {
+    if (cur >= phases[i].from && cur <= phases[i].to) set.push(i);
+  }
+  return set;
+}
+
+function spTogglePhase(i) {
+  const plan = spCurPlan();
+  if (!plan) return;
+  const phases = spPhasesFor(plan);
+  const set = spCurrentOpenSet(phases, spCurrentDay(plan));
+  const at = set.indexOf(i);
+  if (at === -1) set.push(i); else set.splice(at, 1);
+  planOpenPhases = set;
+  const sec = document.getElementById('planPhase' + i);
+  if (sec) sec.classList.toggle('open', set.indexOf(i) !== -1);
+}
+
+function renderPlanOverview(opts) {
+  const plan = spCurPlan();
+  const container = document.getElementById('planOverview');
+  if (!plan || !container) return;
+  const cur = spCurrentDay(plan);
+  const phases = spPhasesFor(plan);
+  const openSet = spCurrentOpenSet(phases, cur);
+  const CH = ['一', '二', '三', '四', '五', '六'];
+
+  let html = '', daysAllDone = 0;
+  phases.forEach(function (ph, i) {
+    const st = spPhaseStats(plan, ph.from, ph.to);
+    html += '<section class="plan-phase" id="planPhase' + i + '">'   // 先渲染成收起态，稍后统一加 .open，展开才走过渡
+      +   '<button type="button" class="plan-phase-head" onclick="spTogglePhase(' + i + ')">'
+      +     '<span class="plan-phase-no">阶段' + (CH[i] || (i + 1)) + '</span>'
+      +     '<span class="plan-phase-title">' + escHtml(ph.title) + '</span>'
+      +     '<span class="plan-phase-range">第 ' + ph.from + '–' + ph.to + ' 天</span>'
+      +     '<span class="plan-phase-stat" id="planPhaseStat' + i + '">已完成 ' + st.daysDone + ' 天 · 任务 ' + st.taskDone + '/' + st.taskAll + '</span>'
+      +     '<span class="plan-phase-caret">▾</span>'
+      +   '</button>'
+      +   '<div class="plan-phase-body"><div class="plan-phase-body-inner">';
+    for (let d = ph.from; d <= ph.to; d++) {
+      const parts = spCellParts(d, plan, cur);
+      html += '<div class="' + parts.cls + '" id="planCell' + d + '" onclick="openPlanDay(' + d + ')">'
+        + spCellInner(d, parts) + '</div>';
+      const day = plan.days[String(d)];
+      if (day && day.tasks.length && day.tasks.every(function (t) { return t.done; })) daysAllDone++;
+    }
+    html += '</div></div></section>';
+  });
+  container.innerHTML = html;
+
+  // 展开要展开的阶段。locate（首次打开 / 定位当前天）时下一帧再加 .open，
+  // 让 grid-template-rows 从 0fr 过渡到 1fr —— 也就是"向下展开"的动画；其余渲染直接 open，不闪。
+  const animate = !!(opts && opts.locate);
+  const applyOpen = function () {
+    openSet.forEach(function (i) {
+      const sec = document.getElementById('planPhase' + i);
+      if (sec) sec.classList.add('open');
+    });
+  };
+  if (animate) {
+    requestAnimationFrame(function () { requestAnimationFrame(applyOpen); });
+  } else {
+    applyOpen();
+  }
+
+  const banner = document.getElementById('planCompleteBanner');
+  if (banner) {
+    banner.innerHTML = (daysAllDone === SP_DAYS)
+      ? '<div class="plan-complete-banner">🎉 60 天计划全部完成！</div>' : '';
+  }
+
+  const st = spStoreStats(plan);
+  const sub = document.getElementById('planOverviewSub');
+  if (sub) {
+    sub.textContent = '共 ' + SP_DAYS + ' 天 · 已排 ' + st.daysPlanned + ' 天 · 已完成 ' + st.daysDone
+      + ' 天 · 任务 ' + st.taskDone + '/' + st.taskAll + ' · 计划总时长 ' + spFmtMin(st.minutes);
+  }
+  spUpdateCurrentBadge();
+
+  // 定位当前天：等展开动画进行时再滚到当前天，并对该横条做一次绿色脉冲高亮
+  if (opts && opts.locate) {
+    const locate = function () {
+      const cell = document.getElementById('planCell' + cur);
+      if (!cell) return;
+      if (cell.scrollIntoView) {
+        try { cell.scrollIntoView({ block: 'nearest' }); } catch (e) { cell.scrollIntoView(); }
+      }
+      cell.classList.remove('flash'); void cell.offsetWidth; cell.classList.add('flash');
+    };
+    if (animate) setTimeout(locate, 150); else locate();
+  }
+}
+
+// 手术式刷新 60 个格子（格子内没有输入框，重建安全），并同步当前天徽标与各阶段汇总
+function spSyncCells() {
+  const plan = spCurPlan();
+  if (!plan || !document.getElementById('planCell1')) return;
+  const cur = spCurrentDay(plan);
+  for (let d = 1; d <= SP_DAYS; d++) {
+    const el = document.getElementById('planCell' + d);
+    if (!el) continue;
+    const parts = spCellParts(d, plan, cur);
+    el.className = parts.cls;
+    el.innerHTML = spCellInner(d, parts);
+  }
+  spPhasesFor(plan).forEach(function (ph, i) {
+    const statEl = document.getElementById('planPhaseStat' + i);
+    if (!statEl) return;
+    const st = spPhaseStats(plan, ph.from, ph.to);
+    statEl.textContent = '已完成 ' + st.daysDone + ' 天 · 任务 ' + st.taskDone + '/' + st.taskAll;
+  });
+  spUpdateCurrentBadge();
+}
+
+function spUpdateCurrentBadge() {
+  const plan = spCurPlan();
+  const el = document.getElementById('planCurrentBadge');
+  if (!plan || !el) return;
+  const manual = (plan.manualDay !== null);
+  el.textContent = '当前：Day ' + spCurrentDay(plan) + (manual ? '（手动指定）' : '');
+}
+
+function spUpdateDayBadge() {
+  const plan = spCurPlan();
+  const el = document.getElementById('spDayBadge');
+  if (!plan || !el || !planDetailDay) return;
+  el.textContent = (planDetailDay === spCurrentDay(plan)) ? '当前天' : '';
+}
+
+// ── 单日详情 ─────────────────────────────────────────────────
+
+function openPlanDay(d) {
+  planDetailDay = d;
+  planView = 'detail';
+  renderStudyPlan({ locate: false });
+  window.scrollTo(0, 0);
+}
+
+function backToPlanOverview() {
+  planView = 'overview';
+  planDetailDay = null;
+  renderStudyPlan({ locate: false });
+}
+
+function spLocateCurrent() {
+  const plan = spCurPlan();
+  if (!plan) return;
+  if (plan.manualDay !== null) { plan.manualDay = null; spSaveNow(); }  // 清除手动钉住，回到自动推进
+  planView = 'overview';
+  planDetailDay = null;
+  renderStudyPlan({ locate: true });
+}
+
+function spTaskRowHtml(t, i, n) {
+  return '<div class="plan-task' + (t.done ? ' done' : '') + '" id="spTask_' + t.id + '">'
+    + '<input type="checkbox" class="plan-task-check"' + (t.done ? ' checked' : '')
+    + ' onchange="spToggleTask(\'' + t.id + '\')">'
+    + '<input class="plan-task-text" id="spText_' + t.id + '" value="' + spEscAttr(t.text) + '"'
+    + ' placeholder="填写任务内容…" oninput="spSetTaskText(\'' + t.id + '\', this.value)">'
+    + '<span class="plan-task-dur">'
+    +   '<input type="number" class="plan-task-dur-input" id="spH_' + t.id + '" min="0" max="23" value="' + Math.floor(t.min / 60) + '"'
+    +   ' oninput="spSetTaskMin(\'' + t.id + '\',\'h\',this.value)">h'
+    +   '<input type="number" class="plan-task-dur-input" id="spM_' + t.id + '" min="0" max="59" value="' + (t.min % 60) + '"'
+    +   ' oninput="spSetTaskMin(\'' + t.id + '\',\'m\',this.value)">m'
+    + '</span>'
+    + '<div class="plan-task-actions">'
+    +   '<button class="plan-icon-btn" id="spUp_' + t.id + '" onclick="spMoveTask(\'' + t.id + '\',-1)" title="上移"'
+    +   (i === 0 ? ' disabled' : '') + '>↑</button>'
+    +   '<button class="plan-icon-btn" id="spDown_' + t.id + '" onclick="spMoveTask(\'' + t.id + '\',1)" title="下移"'
+    +   (i === n - 1 ? ' disabled' : '') + '>↓</button>'
+    +   '<button class="plan-icon-btn" id="spDel_' + t.id + '" onclick="spDeleteTask(\'' + t.id + '\')" title="删除">✕</button>'
+    + '</div>'
+    + '</div>';
+}
+
+function renderPlanDetail() {
+  const plan = spCurPlan();
+  const wrap = document.getElementById('planDetailWrap');
+  if (!plan || !wrap || !planDetailDay) return;
+  const d = planDetailDay;
+  const day = spGetDay(d, false);
+  const tasks = day ? day.tasks : [];
+  const target = day ? day.target : SP_DEFAULT_TARGET;
+  const isCur = (d === spCurrentDay(plan));
+
+  const listHtml = tasks.length
+    ? '<div class="plan-task-list">' + tasks.map(function (t, i) { return spTaskRowHtml(t, i, tasks.length); }).join('') + '</div>'
+    : '<div class="plan-empty">这一天还没有任务，点下面的按钮添加。</div>';
+
+  wrap.innerHTML =
+      '<div class="plan-detail-head">'
+    +   '<button class="plan-back-btn" onclick="backToPlanOverview()">← 返回总览</button>'
+    +   '<span class="plan-day-title">Day ' + d + '</span>'
+    +   '<span class="plan-current-badge" id="spDayBadge">' + (isCur ? '当前天' : '') + '</span>'
+    +   '<div class="plan-day-target">目标时长'
+    +     '<input type="number" class="plan-num-input" id="spTargetH" min="0" max="23" value="' + Math.floor(target / 60) + '"'
+    +     ' oninput="spSetDayTarget(\'h\',this.value)">h'
+    +     '<input type="number" class="plan-num-input" id="spTargetM" min="0" max="59" value="' + (target % 60) + '"'
+    +     ' oninput="spSetDayTarget(\'m\',this.value)">min'
+    +     (isCur ? '' : '<button class="btn btn-secondary plan-sm-btn" onclick="spSetCurrentDay(' + d + ')">设为当前天</button>')
+    +   '</div>'
+    + '</div>'
+    + '<div class="plan-day-summary" id="spDaySummary"></div>'
+    + listHtml
+    + '<div class="plan-add-row"><button class="plan-add-btn" onclick="spAddTask()">＋ 添加任务</button></div>';
+
+  spUpdateDaySummary();
+}
+
+function spUpdateDaySummary() {
+  const el = document.getElementById('spDaySummary');
+  if (!el || !planDetailDay) return;
+  const day = spGetDay(planDetailDay, false);
+  const t = spDayTotals(day);
+  const target = day ? day.target : SP_DEFAULT_TARGET;
+  const over = target > 0 && t.min > target;
+  el.className = 'plan-day-summary' + (over ? ' over' : '');
+  el.innerHTML = '已排 <strong>' + spFmtMin(t.min) + '</strong> / 目标 <strong>' + spFmtMin(target) + '</strong>'
+    + ' · 任务 <strong>' + t.done + '/' + t.n + '</strong> 完成'
+    + (over ? ' ⚠️ 超出目标 ' + spFmtMin(t.min - target) : '');
+}
+
+// 结构性改动（增/删/移）后重建详情，并按元素 id 恢复焦点与光标
+function spRerenderDetailKeepFocus() {
+  const active = document.activeElement;
+  const keepId = (active && active.id) ? active.id : null;
+  let ss = null, se = null;
+  try {
+    if (active && typeof active.selectionStart === 'number') { ss = active.selectionStart; se = active.selectionEnd; }
+  } catch (e) {}
+  renderPlanDetail();
+  if (!keepId) return;
+  const el = document.getElementById(keepId);
+  if (!el) return;
+  el.focus();
+  if (ss !== null && el.setSelectionRange) { try { el.setSelectionRange(ss, se); } catch (e) {} }
+}
+
+// ── 任务操作（全部按稳定 id 定位，绝不用下标） ────────────────
+
+function spFindTask(id) {
+  const day = spGetDay(planDetailDay, false);
+  if (!day) return null;
+  const t = day.tasks.filter(function (x) { return x.id === id; })[0];
+  return t ? { day: day, task: t } : null;
+}
+
+function spAddTask() {
+  const day = spGetDay(planDetailDay, true);
+  if (!day) return;
+  const t = { id: spNewTaskId(), text: '', min: SP_NEW_TASK_MIN, done: false };
+  day.tasks.push(t);
+  spSaveNow();
+  renderPlanDetail();
+  const el = document.getElementById('spText_' + t.id);
+  if (el) el.focus();
+}
+
+function spDeleteTask(id) {
+  const hit = spFindTask(id);
+  if (!hit) return;
+  if (hit.task.text.trim() && !confirm('删除这条任务？')) return;
+  const i = hit.day.tasks.indexOf(hit.task);
+  hit.day.tasks.splice(i, 1);
+  spSaveNow();
+  spRerenderDetailKeepFocus();
+  spUpdateDaySummary();
+  spSyncCells();
+}
+
+function spMoveTask(id, dir) {
+  const hit = spFindTask(id);
+  if (!hit) return;
+  const list = hit.day.tasks;
+  const i = list.indexOf(hit.task);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= list.length) return;
+  const tmp = list[i]; list[i] = list[j]; list[j] = tmp;
+  spSaveNow();
+  spRerenderDetailKeepFocus();
+}
+
+// 一级：改值不重建 DOM（输入框本身永不替换，光标不丢）
+function spSetTaskText(id, val) {
+  const hit = spFindTask(id);
+  if (!hit || hit.task.text === val) return;
+  hit.task.text = val;
+  spSaveDebounced();
+}
+
+function spSetTaskMin(id, part, val) {
+  const hit = spFindTask(id);
+  if (!hit) return;
+  let n = parseInt(val, 10);
+  if (!Number.isFinite(n) || n < 0) n = 0;
+  const h = Math.floor(hit.task.min / 60), m = hit.task.min % 60;
+  const nh = (part === 'h') ? Math.min(n, 23) : h;
+  const nm = (part === 'm') ? Math.min(n, 59) : m;
+  hit.task.min = nh * 60 + nm;
+  spSaveDebounced();
+  spUpdateDaySummary();
+  spSyncCells();
+}
+
+// 三级：勾选只做手术式更新，完全不重建
+function spToggleTask(id) {
+  const hit = spFindTask(id);
+  if (!hit) return;
+  hit.task.done = !hit.task.done;
+  spSaveNow();
+  const row = document.getElementById('spTask_' + id);
+  if (row) row.classList.toggle('done', hit.task.done);
+  const cb = row ? row.querySelector('.plan-task-check') : null;
+  if (cb) cb.checked = hit.task.done;
+  spUpdateDaySummary();
+  spSyncCells();
+  spUpdateDayBadge();
+}
+
+function spSetDayTarget(part, val) {
+  const day = spGetDay(planDetailDay, true);
+  if (!day) return;
+  let n = parseInt(val, 10);
+  if (!Number.isFinite(n) || n < 0) n = 0;
+  const h = Math.floor(day.target / 60), m = day.target % 60;
+  const nh = (part === 'h') ? Math.min(n, 23) : h;
+  const nm = (part === 'm') ? Math.min(n, 59) : m;
+  day.target = nh * 60 + nm;
+  spSaveDebounced();
+  spUpdateDaySummary();
+  spSyncCells();
+}
+
+function spSetCurrentDay(d) {
+  const plan = spCurPlan();
+  if (!plan) return;
+  plan.manualDay = d;
+  spSaveNow();
+  spSyncCells();
+  renderPlanDetail();   // 重渲染头部：徽标变「当前天」、「设为当前天」按钮消失
+}
+
+// ── 身份切换 ─────────────────────────────────────────────────
+
+function spSelectIdentity(id) {
+  if (PLAN_IDENTITIES.indexOf(id) === -1) return;   // 已收起的身份：入口栏没有按钮，防手改调用
+  planIdentity = id;   // 仅内存，不落盘
+  planOpenPhases = null;   // 换身份后回到默认展开态（只开当前天所在阶段）
+  spSeedPresetIfNeeded();   // 该身份首次进入时铺预设计划底稿
+  planView = 'overview';
+  planDetailDay = null;
+  renderStudyPlan({ locate: true });
+}
+
+// 预设计划：数据来自 study-plan-preset.js（可选文件，缺失时静默跳过）
+function spPresetFor(id) {
+  if (typeof STUDY_PLAN_PRESETS === 'undefined' || !STUDY_PLAN_PRESETS) return null;
+  return STUDY_PLAN_PRESETS[id] || null;
+}
+
+// 这份预设的标记值，形如 'sophia@1'。身份没有预设时返回 null（调用方据此判断"没得铺"）。
+function spPresetKey(id, preset) {
+  if (!preset || PLAN_IDENTITIES.indexOf(id) === -1) return null;
+  return id + '@' + ((preset.plan && preset.plan.v) || 1);
+}
+
+// 首次进入时自动铺一份预设底稿，让计划页打开就有内容，不需要任何按钮。
+// plan.seeded 记的是已铺过的预设 key，保证只铺一次：用户逐条删光内容后，预设不会又自己长回来。
+function spSeedPresetIfNeeded() {
+  const plan = spCurPlan();
+  if (!plan) return false;
+  const preset = spPresetFor(planIdentity);
+  const key = spPresetKey(planIdentity, preset);
+  if (!key) return false;                 // 这个身份还没有预设 → 什么都不写，等有了再说
+  if (plan.seeded === key) return false;  // 这份预设已经铺过（用户删光了也是这个分支，不会自己长回来）
+  if (Object.keys(plan.days).length > 0) { plan.seeded = key; spSaveNow(); return false; }  // 已有内容 → 只补标记
+  plan.seeded = key;
+  // 深拷贝后过一遍归一化：补齐目标值等默认值，预设写错也不会把脏数据带进来
+  const norm = spNormalizePlan(JSON.parse(JSON.stringify(preset.plan)));
+  plan.days = norm.days;
+  plan.phases = norm.phases;   // 阶段也要一并带过来，否则铺出来的计划没有阶段（v3 起）
+  spSaveNow();
+  return true;
+}
+
+// ── 批注气泡的触屏支持 ──────────────────────────────────────
+// 触屏没有 hover，而批注提示是纯 :hover 触发的 —— 手机上完全看不到 AI 批注。
+// 这里做事件委托：点一下带批注的片段就切换 .tip-open（CSS 里与 :hover 并列）。
+// 桌面端不受影响，鼠标 hover 照样直接出气泡。
+const IELTS_TIP_SEL = '.ielts-good,.ielts-grammar,.ielts-vocab,.ielts-suggest,.ielts-fluency,.ielts-pronounce';
+
+function closeAllTips() {
+  // 只用 .tip-open 就够：这个 class 只有批注片段会加
+  document.querySelectorAll('.tip-open').forEach(el => el.classList.remove('tip-open'));
+}
+
+document.addEventListener('click', function (e) {
+  const tip = e.target && e.target.closest ? e.target.closest(IELTS_TIP_SEL) : null;
+  const wasOpen = !!(tip && tip.classList.contains('tip-open'));
+  closeAllTips();                       // 同屏只允许开一个
+  if (tip && !wasOpen) tip.classList.add('tip-open');
+});
+
+// 点空白/滚动/切 Tab 时收起，避免气泡黏在屏幕上
+document.addEventListener('scroll', closeAllTips, true);
+
+// ══════════════════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
@@ -6290,30 +7313,9 @@ document.addEventListener('DOMContentLoaded', () => {
   drawIdleWaveform();
   // init listening glossary in background
   initListening();
-  // Friendly first-visit prompt — only if no key has ever been set
-  const dkKey = localStorage.getItem('deepseek_api_key');
-  const groqKey = localStorage.getItem('groq_api_key');
-  if (!dkKey && !groqKey && !localStorage.getItem('api_prompt_dismissed')) {
-    // Show a softer, one-time welcome prompt
-    const welcomeModal = document.createElement('div');
-    welcomeModal.className = 'modal-overlay active';
-    welcomeModal.id = 'welcomeKeyModal';
-    welcomeModal.innerHTML = '<div class="modal-box">' +
-      '<div class="modal-title">👋 欢迎使用 IELTS AI Grader</div>' +
-      '<div class="modal-desc">写作批改和口语评分需要调用 AI 模型，如果你有 <strong>DeepSeek API Key</strong>（评分）或 <strong>Groq API Key</strong>（语音转写），可以现在配置。<br><br>💡 <strong>听力同义替换练习</strong>完全不需要任何 Key，即开即玩。</div>' +
-      '<div style="font-size:12px;color:var(--text-tertiary);margin-bottom:16px;line-height:1.6">Key 仅存储在本地浏览器中，不会上传到任何服务器。</div>' +
-      '<div class="modal-btn-row" style="gap:8px">' +
-        '<button class="btn btn-secondary" onclick="dismissWelcomeKeyModal()">暂不设置</button>' +
-        '<button class="btn btn-primary" onclick="dismissWelcomeKeyModal();showApiKeyModal()">⚙ 去设置</button>' +
-      '</div>' +
-      '<div class="modal-hint">💡 后续可随时点击右上角 ⚙ 设置按钮配置 Key</div>' +
-    '</div>';
-    document.body.appendChild(welcomeModal);
-    window.dismissWelcomeKeyModal = function() {
-      welcomeModal.remove();
-      localStorage.setItem('api_prompt_dismissed', '1');
-    };
-  }
+  // init 60-day study plan (home page right pane)
+  initStudyPlan({ locate: true });
+  // 不再主动弹 API Key 引导窗：需要配置时由用户自己点右上角 ⚙ 设置
 });
 </script>
 
